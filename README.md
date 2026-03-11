@@ -10,21 +10,16 @@ The design constraints are intentional:
 
 ## Repository Layout
 
-The repository is organized by automation task:
+The repository is organized by automation task. Each script lives in its own top-level directory.
 
 ```text
 .
 ├── README.md
 ├── LICENSE
-└── photo-import/
+└── <script-name>/
     ├── README.md
     ├── main.py
-    ├── config.py
-    ├── detect.py
-    ├── mount.py
-    ├── photo_copy.py
-    ├── cleanup.py
-    └── logging_utils.py
+    └── ...
 ```
 
 The repository should grow by adding more script directories at the top level.
@@ -47,24 +42,9 @@ Preferred Python module responsibilities:
 
 Shell scripts are acceptable when the task is truly simple, but Python is the default.
 
-## Current Script: `photo-import`
+## Scripts
 
-`photo-import` is intended to automate ingesting photos and videos from a camera SD card inserted into the NAS.
-
-Target workflow:
-1. Detect an inserted SD card.
-2. Mount it read-only at a configured mount point.
-3. Copy image and video files to a configured destination.
-4. Skip thumbnails and other preview artifacts.
-5. Unmount the SD card automatically.
-6. Exit cleanly when no suitable card is present.
-
-Configurable inputs for `photo-import`:
-- Destination path
-- Temporary mount path
-- Allowed file extensions
-- Thumbnail exclusion rules
-- Logging and state paths
+- `photo-import`: Imports photos and videos from a camera SD card on the NAS. See [photo-import/README.md](/home/dev/git/script/photo-import/README.md).
 
 ## Development Approach
 
@@ -93,4 +73,4 @@ The `Makefile` uses `.venv/bin/python` and `.venv/bin/ruff` by default, so activ
 
 ## Status
 
-`photo-import` is now the first structured script in the monorepo. Additional automations should follow the same shape.
+`photo-import` is the first structured script in the monorepo. Additional automations should follow the same shape.
