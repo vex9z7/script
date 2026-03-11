@@ -59,6 +59,7 @@ Before adding behavior:
 ## Development Tooling
 
 The repo includes `ruff` configuration in [`pyproject.toml`](/home/dev/git/script/pyproject.toml) for both formatting and linting.
+The repo is pinned to Python `3.11.9` via [.python-version](/home/dev/git/script/.python-version).
 
 Common commands:
 - `make fmt`

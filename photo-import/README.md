@@ -34,8 +34,11 @@ photo-import/
 ├── mount.py
 ├── photo_copy.py
 ├── cleanup.py
-└── logging_utils.py
+├── logging_utils.py
+└── tests/
 ```
+
+The unit tests for this script live under `photo-import/tests/`.
 
 ## Responsibilities
 
