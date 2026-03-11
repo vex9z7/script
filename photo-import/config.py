@@ -6,9 +6,8 @@ from pathlib import Path
 
 @dataclass(frozen=True)
 class Config:
-    base_dir: Path = Path("/mnt/tank/automation/photo-import")
-    mount_point: Path = Path("/mnt/photo_sd")
-    destination_root: Path = Path("/mnt/tank/photo-import")
+    mount_point: Path = Path("/mnt/camera-sd-card")
+    destination_root: Path = Path("/mnt/tank/photo/import")
     read_only: bool = True
     supported_filesystems: tuple[str, ...] = ("exfat", "vfat", "fat32")
     required_dir_names: tuple[str, ...] = ("DCIM",)
@@ -53,14 +52,6 @@ class Config:
         default_factory=lambda: frozenset({".thm", ".thumb"})
     )
     overwrite_existing: bool = False
-
-    @property
-    def log_file(self) -> Path:
-        return self.base_dir / "logs" / "photo_import.log"
-
-    @property
-    def state_file(self) -> Path:
-        return self.base_dir / "state" / "last_import.json"
 
 
 DEFAULT_CONFIG = Config()

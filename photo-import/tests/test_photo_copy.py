@@ -38,7 +38,6 @@ def test_copy_media_files_copies_allowed_media_and_skips_excluded_items(
     (thumbnail_dir / "skip.jpg").write_text("skip", encoding="utf-8")
 
     config = Config(
-        base_dir=tmp_path / "base",
         mount_point=mount_point,
         destination_root=destination_root,
         excluded_dir_names=frozenset({"thumbnails"}),
@@ -67,7 +66,6 @@ def test_copy_media_files_skips_existing_files_by_default(tmp_path, candidate_de
     existing_destination.write_text("old", encoding="utf-8")
 
     config = Config(
-        base_dir=tmp_path / "base",
         mount_point=mount_point,
         destination_root=destination_root,
     )

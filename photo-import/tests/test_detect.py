@@ -6,7 +6,6 @@ from detect import find_candidate_devices
 
 def test_find_candidate_devices_filters_and_sorts(monkeypatch, tmp_path):
     config = Config(
-        base_dir=tmp_path / "base",
         mount_point=tmp_path / "mount",
         destination_root=tmp_path / "dest",
     )
@@ -81,7 +80,6 @@ def test_find_candidate_devices_filters_and_sorts(monkeypatch, tmp_path):
 
 def test_find_candidate_devices_respects_supported_filesystems(monkeypatch, tmp_path):
     config = Config(
-        base_dir=tmp_path / "base",
         mount_point=tmp_path / "mount",
         destination_root=tmp_path / "dest",
         supported_filesystems=("exfat",),
