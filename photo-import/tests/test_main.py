@@ -11,16 +11,13 @@ from photo_copy import CopyStats
 def test_main_returns_zero_when_no_candidate_devices(monkeypatch, tmp_path):
     main_module = importlib.import_module("main")
     config = Config(
-        base_dir=tmp_path / "base",
         mount_point=tmp_path / "mount",
         destination_root=tmp_path / "dest",
     )
 
     monkeypatch.setattr(main_module, "DEFAULT_CONFIG", config)
     monkeypatch.setattr(main_module.os, "geteuid", lambda: 0)
-    monkeypatch.setattr(
-        main_module, "build_logger", lambda _: logging.getLogger("test")
-    )
+    monkeypatch.setattr(main_module, "build_logger", lambda: logging.getLogger("test"))
     monkeypatch.setattr(main_module, "is_mountpoint", lambda _: False)
     monkeypatch.setattr(main_module, "find_candidate_devices", lambda _: [])
 
@@ -30,7 +27,6 @@ def test_main_returns_zero_when_no_candidate_devices(monkeypatch, tmp_path):
 def test_main_runs_successful_import_flow(monkeypatch, tmp_path):
     main_module = importlib.import_module("main")
     config = Config(
-        base_dir=tmp_path / "base",
         mount_point=tmp_path / "mount",
         destination_root=tmp_path / "dest",
     )
@@ -47,9 +43,7 @@ def test_main_runs_successful_import_flow(monkeypatch, tmp_path):
 
     monkeypatch.setattr(main_module, "DEFAULT_CONFIG", config)
     monkeypatch.setattr(main_module.os, "geteuid", lambda: 0)
-    monkeypatch.setattr(
-        main_module, "build_logger", lambda _: logging.getLogger("test")
-    )
+    monkeypatch.setattr(main_module, "build_logger", lambda: logging.getLogger("test"))
     monkeypatch.setattr(main_module, "is_mountpoint", lambda _: False)
     monkeypatch.setattr(main_module, "find_candidate_devices", lambda _: [device])
     monkeypatch.setattr(
@@ -69,11 +63,6 @@ def test_main_runs_successful_import_flow(monkeypatch, tmp_path):
     )
     monkeypatch.setattr(
         main_module,
-        "save_state",
-        lambda state_file, state: calls.append(("save_state", state_file, state)),
-    )
-    monkeypatch.setattr(
-        main_module,
         "safe_unmount",
         lambda mount_point, logger: calls.append(("unmount", mount_point)) or True,
     )
@@ -81,14 +70,12 @@ def test_main_runs_successful_import_flow(monkeypatch, tmp_path):
     assert main_module.main() == 0
     assert calls[0] == ("mount", device.path, config.mount_point, config.read_only)
     assert calls[1] == ("copy", config.destination_root, device.path)
-    assert calls[2][0] == "save_state"
-    assert calls[3] == ("unmount", config.mount_point)
+    assert calls[2] == ("unmount", config.mount_point)
 
 
 def test_main_returns_one_when_unmount_fails(monkeypatch, tmp_path):
     main_module = importlib.import_module("main")
     config = Config(
-        base_dir=tmp_path / "base",
         mount_point=tmp_path / "mount",
         destination_root=tmp_path / "dest",
     )
@@ -104,9 +91,7 @@ def test_main_returns_one_when_unmount_fails(monkeypatch, tmp_path):
 
     monkeypatch.setattr(main_module, "DEFAULT_CONFIG", config)
     monkeypatch.setattr(main_module.os, "geteuid", lambda: 0)
-    monkeypatch.setattr(
-        main_module, "build_logger", lambda _: logging.getLogger("test")
-    )
+    monkeypatch.setattr(main_module, "build_logger", lambda: logging.getLogger("test"))
     monkeypatch.setattr(main_module, "is_mountpoint", lambda _: False)
     monkeypatch.setattr(main_module, "find_candidate_devices", lambda _: [device])
     monkeypatch.setattr(main_module, "mount_device", lambda *args, **kwargs: None)
@@ -117,7 +102,6 @@ def test_main_returns_one_when_unmount_fails(monkeypatch, tmp_path):
             copied_files=1, skipped_existing=0, filtered_out=0
         ),
     )
-    monkeypatch.setattr(main_module, "save_state", lambda *args, **kwargs: None)
     monkeypatch.setattr(main_module, "safe_unmount", lambda *args, **kwargs: False)
 
     assert main_module.main() == 1

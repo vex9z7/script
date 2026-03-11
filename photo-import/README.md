@@ -83,8 +83,6 @@ The following items should be configurable in `config.py`:
 
 - `mount_point`
 - `destination_root`
-- `log_file`
-- `state_file`
 - `read_only`
 - `allowed_extensions`
 - `excluded_dir_names`
@@ -102,7 +100,7 @@ These are examples only. The code should treat them as configuration, not policy
 - The script is expected to run with enough privileges to mount and unmount devices.
 - Read-only mounting is the default for safety.
 - The import step should preserve source data and must not mutate the SD card.
-- Logging should make it obvious which device was detected, where files were copied, and whether unmount succeeded.
+- Logging is currently stdout-only.
 
 ## Usage
 
