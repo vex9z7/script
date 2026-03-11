@@ -1,5 +1,5 @@
-PYTHON ?= python
-RUFF ?= ruff
+PYTHON ?= .venv/bin/python
+RUFF ?= .venv/bin/ruff
 
 .PHONY: fmt lint check
 

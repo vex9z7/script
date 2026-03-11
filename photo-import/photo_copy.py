@@ -23,7 +23,8 @@ def copy_media_files(config: Config, logger, device: CandidateDevice) -> CopySta
 
     if not _has_required_layout(mount_point, config):
         raise RuntimeError(
-            f"mounted device {device.path} does not contain any of {config.required_dir_names}"
+            "mounted device "
+            f"{device.path} does not contain any of {config.required_dir_names}"
         )
 
     copied_files = 0

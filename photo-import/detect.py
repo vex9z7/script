@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import json
 import subprocess
+from dataclasses import dataclass
 
 from config import Config
 

@@ -32,7 +32,7 @@ photo-import/
 ├── config.py
 ├── detect.py
 ├── mount.py
-├── copy.py
+├── photo_copy.py
 ├── cleanup.py
 └── logging_utils.py
 ```
@@ -60,7 +60,7 @@ photo-import/
 - Check whether the mount succeeded.
 - Unmount reliably during cleanup.
 
-`copy.py`
+`photo_copy.py`
 - Walk the mounted filesystem.
 - Select files by configured extension set.
 - Exclude thumbnails, caches, and preview files.

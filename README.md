@@ -22,7 +22,7 @@ The repository is organized by automation task:
     ├── config.py
     ├── detect.py
     ├── mount.py
-    ├── copy.py
+    ├── photo_copy.py
     ├── cleanup.py
     └── logging_utils.py
 ```
@@ -41,7 +41,7 @@ Each script directory should follow these rules:
 Preferred Python module responsibilities:
 - `detect`: discover devices or inputs.
 - `mount`: mount and unmount storage.
-- `copy`: file-selection and copy logic.
+- `photo_copy`: file-selection and copy logic.
 - `cleanup`: teardown, state cleanup, and error-safe finalization.
 - `logging_utils`: simple local logging helpers.
 
@@ -85,7 +85,11 @@ Common commands:
 - `make lint`
 - `make check`
 
-If `ruff` is not installed on the machine yet, install it in your preferred Python environment and then run the commands above.
+Recommended setup:
+- `python -m venv .venv`
+- `.venv/bin/pip install -r requirements-dev.txt`
+
+The `Makefile` uses `.venv/bin/python` and `.venv/bin/ruff` by default, so activation is optional.
 
 ## Status
 

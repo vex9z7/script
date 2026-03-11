@@ -7,10 +7,10 @@ from datetime import datetime
 
 from cleanup import safe_unmount
 from config import DEFAULT_CONFIG
-from copy import copy_media_files
 from detect import find_candidate_devices
 from logging_utils import build_logger, save_state
 from mount import is_mountpoint, mount_device
+from photo_copy import copy_media_files
 
 
 def main() -> int:
