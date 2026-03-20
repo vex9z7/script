@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from unittest.mock import patch
+
 from sync import sync
 
 
@@ -79,6 +81,8 @@ class TestSync:
         assert not (dest / "document.txt").exists()
 
     def test_sync_deletes_extra_files_in_destination(self, tmp_path):
+        from fingerprint import Fingerprint
+
         source = tmp_path / "source"
         dest = tmp_path / "dest"
         source.mkdir()
@@ -86,12 +90,14 @@ class TestSync:
         (source / "keep.txt").write_text("keep")
         (dest / "keep.txt").write_text("keep")
         (dest / "delete.txt").write_text("delete")
-        import os
 
-        src_stat = os.stat(source / "keep.txt")
-        os.utime(dest / "keep.txt", (src_stat.st_atime, src_stat.st_mtime))
+        same_mtime = 1000.0
 
-        stats = sync(source, dest)
+        def mock_get_fingerprint(path):
+            return Fingerprint(size=4, mtime=same_mtime, get_sha256=lambda: "abc123")
+
+        with patch("sync.get_fingerprint", side_effect=mock_get_fingerprint):
+            stats = sync(source, dest)
 
         assert stats.copied == 0
         assert stats.skipped == 1

@@ -34,6 +34,8 @@ photo-import/
 ├── mount.py
 ├── photo_sync.py
 ├── cleanup.py
+├── .photoignore
+├── .photoextensions
 ├── .env.example
 └── tests/
 ```
@@ -89,10 +91,10 @@ The following items are configurable in `config.py`:
 - `mount_point`: Mount point for SD card (default: `/mnt/camera-sd-card`)
 - `destination_root`: Destination for imported files
 - `read_only`: Mount read-only (default: `True`)
-- `allowed_extensions`: Supported file extensions
-- `excluded_dir_names`: Directories to skip
+- `allowed_extensions`: Supported file extensions (loaded from `.photoextensions`)
+- `excluded_dir_names`: Directories to skip (loaded from `.photoignore`)
 - `excluded_file_names`: Files to skip
-- `excluded_suffixes`: File suffixes to skip
+- `excluded_suffixes`: File suffixes to skip (loaded from `.photoignore`)
 
 All paths can be configured via environment variables. See `.env.example`.
 

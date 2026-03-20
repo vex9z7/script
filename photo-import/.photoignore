@@ -1,0 +1,12 @@
+# Directories to skip
+dir:@eadir
+dir:.trashes
+dir:.spotlight-v100
+dir:thumb
+dir:thumbs
+dir:thumbnail
+dir:thumbnails
+
+# File suffixes to skip
+suffix:.thm
+suffix:.thumb

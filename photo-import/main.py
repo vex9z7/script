@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 
 from cleanup import safe_unmount
-from config import DEFAULT_CONFIG
+from config import ConfigurationError, load_config
 from detect import find_candidate_devices
 from mount import is_mountpoint, mount_device
 from photo_sync import sync_media
@@ -17,7 +17,12 @@ from log import build_logger
 
 
 def main() -> int:
-    config = DEFAULT_CONFIG
+    try:
+        config = load_config()
+    except ConfigurationError as e:
+        print(f"Configuration error: {e}", file=sys.stderr)
+        return 1
+
     logger = build_logger("photo_import", log_file=config.log_file)
 
     if os.geteuid() != 0:

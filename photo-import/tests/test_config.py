@@ -4,7 +4,8 @@ import os
 import tempfile
 from pathlib import Path
 
-from config import Config
+import pytest
+from config import Config, ConfigurationError, load_config
 
 import dotenv
 
@@ -64,5 +65,32 @@ class TestConfigDefaults:
         config = Config()
 
         assert config.lock_file == Path("/tmp/photo-import.lock")
-        assert config.mount_point == Path("/mnt/camera-sd-card")
-        assert config.destination_root == Path("/mnt/tank/photo/import")
+        assert config.mount_point is None
+        assert config.destination_root is None
+
+
+class TestLoadConfig:
+    def test_load_config_raises_when_mount_point_missing(self, monkeypatch):
+        monkeypatch.delenv("PHOTO_IMPORT_MOUNT_POINT", raising=False)
+        monkeypatch.delenv("PHOTO_IMPORT_DESTINATION_ROOT", raising=False)
+        monkeypatch.setenv("PHOTO_IMPORT_DESTINATION_ROOT", "/dest")
+
+        with pytest.raises(ConfigurationError, match="PHOTO_IMPORT_MOUNT_POINT"):
+            load_config()
+
+    def test_load_config_raises_when_destination_root_missing(self, monkeypatch):
+        monkeypatch.delenv("PHOTO_IMPORT_MOUNT_POINT", raising=False)
+        monkeypatch.delenv("PHOTO_IMPORT_DESTINATION_ROOT", raising=False)
+        monkeypatch.setenv("PHOTO_IMPORT_MOUNT_POINT", "/src")
+
+        with pytest.raises(ConfigurationError, match="PHOTO_IMPORT_DESTINATION_ROOT"):
+            load_config()
+
+    def test_load_config_returns_config_when_both_set(self, monkeypatch):
+        monkeypatch.setenv("PHOTO_IMPORT_MOUNT_POINT", "/src")
+        monkeypatch.setenv("PHOTO_IMPORT_DESTINATION_ROOT", "/dest")
+
+        config = load_config()
+
+        assert config.mount_point == Path("/src")
+        assert config.destination_root == Path("/dest")

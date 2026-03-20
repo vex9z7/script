@@ -44,9 +44,20 @@ It is intentionally project-independent. Project rules, architecture, and implem
 - At minimum, run unit tests when the codebase has them and they are relevant to the change.
 - If relevant tests do not exist, explicitly call out the coverage gap and suggest adding unit tests.
 - If verification cannot be completed, state what was not run and why.
+- When fixing a bug or finding a flaw, add test cases that reproduce it to prevent regression.
+- Use mocks to isolate tests from external dependencies (filesystem, time, etc.).
+- Prefer pytest fixtures over ad-hoc setup.
+- Do not make tests overly trivial - preserve meaningful behavioral assertions.
+- Do not drop tests unless they are stale or redundant.
+- Do not import modules that are out of the testing scope (e.g., `os`, `time`). Mock them or design tests that don't need them.
 
 ## Version Control
 
 - ALWAYS show the user the changes (via `git diff` or summary) before committing.
 - MUST NOT commit or push without explicit user approval.
 - If the user asks to commit, present the diff and ask for confirmation before executing `git commit`.
+
+## Code Design
+
+- Design functions and classes with testability in mind: keep interfaces simple, decouple dependencies, and make parameters easy to mock.
+- Avoid deep module-level imports of hard-to-mock modules (e.g., `os`, `time`) inside testable functions. Pass dependencies as parameters or use dependency injection.
