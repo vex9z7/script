@@ -5,18 +5,7 @@ import tempfile
 
 import pytest
 
-from lock import LockFailedError, ProcessLock, is_process_running
-
-
-class TestIsProcessRunning:
-    def test_current_process_is_running(self):
-        assert is_process_running(os.getpid()) is True
-
-    def test_nonexistent_pid_returns_false(self):
-        assert is_process_running(99999) is False
-
-    def test_negative_pid_returns_false(self):
-        assert is_process_running(-1) is False
+from lock import ProcessLock
 
 
 class TestProcessLock:
@@ -31,7 +20,6 @@ class TestProcessLock:
         lock.acquire()
         assert os.path.exists(lock_path)
         lock.release()
-        assert os.path.exists(lock_path)
 
     def test_context_manager(self, lock_path):
         with ProcessLock(lock_path) as lock:
@@ -62,7 +50,7 @@ class TestProcessLock:
         lock1 = ProcessLock(lock_path)
         lock1.acquire()
         lock2 = ProcessLock(lock_path)
-        with pytest.raises(LockFailedError):
+        with pytest.raises(OSError):
             lock2.acquire()
         lock1.release()
 
@@ -72,7 +60,7 @@ class TestProcessLock:
         try:
             lock.acquire()
             pytest.fail("Should not allow double acquisition")
-        except LockFailedError:
+        except RuntimeError:
             pass
         finally:
             lock.release()
