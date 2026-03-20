@@ -34,9 +34,14 @@ photo-import/
 ├── mount.py
 ├── photo_copy.py
 ├── cleanup.py
-├── logging_utils.py
+├── .env.example
 └── tests/
 ```
+
+Uses shared modules from root:
+- `lock`: Process locking via `lock/ProcessLock`
+- `log`: Logging via `log/build_logger`
+- `dotenv`: Environment variable loading via `dotenv/load_dotenv`
 
 The unit tests for this script live under `photo-import/tests/`.
 
@@ -73,34 +78,29 @@ The unit tests for this script live under `photo-import/tests/`.
 - Centralize final unmount and state cleanup behavior.
 - Make teardown idempotent.
 
-`logging_utils.py`
-- Provide lightweight file and console logging helpers.
-- Keep logging format consistent.
-
 ## Configuration
 
-The following items should be configurable in `config.py`:
+The following items are configurable in `config.py`:
 
-- `mount_point`
-- `destination_root`
-- `read_only`
-- `allowed_extensions`
-- `excluded_dir_names`
-- `excluded_file_names`
-- `excluded_suffixes`
+- `log_file`: Path to log file (default: `/var/log/photo-import.log`)
+- `lock_file`: Path to lock file (default: `/tmp/photo-import.lock`)
+- `mount_point`: Mount point for SD card (default: `/mnt/camera-sd-card`)
+- `destination_root`: Destination for imported files
+- `read_only`: Mount read-only (default: `True`)
+- `allowed_extensions`: Supported file extensions
+- `excluded_dir_names`: Directories to skip
+- `excluded_file_names`: Files to skip
+- `excluded_suffixes`: File suffixes to skip
 
-Initial examples for file selection:
-- Allowed media extensions: `.jpg`, `.jpeg`, `.png`, `.heic`, `.arw`, `.cr2`, `.cr3`, `.nef`, `.dng`, `.raf`, `.rw2`, `.orf`, `.mp4`, `.mov`, `.mts`, `.m2ts`, `.avi`
-- Common exclusions: `.thm`, `thumb`, `thumbnails`, `@eadir`
-
-These are examples only. The code should treat them as configuration, not policy hard-coded into business logic.
+All paths can be configured via environment variables. See `.env.example`.
 
 ## Operational Notes
 
 - The script is expected to run with enough privileges to mount and unmount devices.
 - Read-only mounting is the default for safety.
 - The import step should preserve source data and must not mutate the SD card.
-- Logging is currently stdout-only.
+- Logging defaults to file output. Set `PHOTO_IMPORT_LOG_FILE` environment variable to configure.
+- A process lock prevents concurrent runs when scheduled from cron.
 
 ## Usage
 

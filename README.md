@@ -72,7 +72,7 @@ Preferred Python module responsibilities:
 
 Shell scripts are acceptable when the task is truly simple, but Python is the default.
 
-**Use shared utilities instead of duplicating functionality. Do not create `logging_utils.py` or similar modules in script directories.**
+**Do not duplicate shared utilities.** If a module with similar functionality exists (e.g., `lock`, `dotenv`, `log`), use it instead of creating a new implementation. Duplication is not tolerated.
 
 ## Scripts
 
