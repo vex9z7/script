@@ -1,5 +1,7 @@
 # TrueNAS Script Monorepo
 
+**Platform: Linux only**
+
 This repository is a monorepo for small operational scripts that run on a TrueNAS system.
 
 The design constraints are intentional:
@@ -16,6 +18,10 @@ The repository is organized by automation task. Each script lives in its own top
 .
 ├── README.md
 ├── LICENSE
+├── lock/                      # Shared utilities
+│   ├── __init__.py
+│   ├── file_lock.py
+│   └── tests/
 └── <script-name>/
     ├── README.md
     ├── main.py
@@ -45,6 +51,21 @@ Shell scripts are acceptable when the task is truly simple, but Python is the de
 ## Scripts
 
 - `photo-import`: Imports photos and videos from a camera SD card on the NAS. See [photo-import/README.md](/home/dev/git/script/photo-import/README.md).
+
+## Shared Utilities
+
+### `lock`
+
+A cross-platform file-based process lock utility. Prevents multiple instances of a script from running simultaneously.
+
+See [lock/README.md](/home/dev/git/script/lock/README.md) for full documentation.
+
+```python
+from lock import ensure_locked
+
+lock = ensure_locked("/var/run/my-script.lock")
+# Exits with error if another instance is running
+```
 
 ## Development Approach
 
