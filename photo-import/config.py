@@ -11,6 +11,11 @@ dotenv.load_dotenv()
 
 @dataclass(frozen=True)
 class Config:
+    log_file: Path | None = (
+        Path(os.environ.get("PHOTO_IMPORT_LOG_FILE", "/var/log/photo-import.log"))
+        if os.environ.get("PHOTO_IMPORT_LOG_FILE")
+        else None
+    )
     lock_file: Path = Path(
         os.environ.get("PHOTO_IMPORT_LOCK_FILE", "/tmp/photo-import.lock")
     )

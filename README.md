@@ -12,24 +12,28 @@ The design constraints are intentional:
 
 ## Repository Layout
 
-The repository is organized by automation task. Each script lives in its own top-level directory.
+Each script or shared utility must live in its own top-level directory. This is a strict rule.
 
 ```text
 .
 ├── README.md
 ├── LICENSE
-├── lock/                      # Shared utilities
+├── lock/                      # Shared utility
 │   ├── README.md
 │   ├── __init__.py
 │   ├── file_lock.py
+│   └── tests/
+├── dotenv/                    # Shared utility
+│   ├── __init__.py
+│   └── tests/
+├── log/                       # Shared utility
+│   ├── __init__.py
 │   └── tests/
 └── <script-name>/
     ├── README.md
     ├── main.py
     └── ...
 ```
-
-The repository should grow by adding more script directories at the top level.
 
 ## Shared Utilities
 
@@ -39,7 +43,7 @@ Shared utilities are reusable modules that live in the root directory. They foll
 <utility-name>/
 ├── README.md                  # Purpose, usage, and API documentation
 ├── __init__.py               # Public API exports
-├── <module>.py                # Implementation
+├── <module>.py               # Implementation (optional)
 └── tests/                    # Unit tests
     ├── __init__.py
     └── test_<module>.py
@@ -48,6 +52,7 @@ Shared utilities are reusable modules that live in the root directory. They foll
 Existing utilities:
 - `lock`: Process lock for preventing concurrent script runs.
 - `dotenv`: Environment variable loader from `.env` files.
+- `log`: Configurable logger with file output support.
 
 ## Script Conventions
 
@@ -64,9 +69,10 @@ Preferred Python module responsibilities:
 - `mount`: mount and unmount storage.
 - `photo_copy`: file-selection and copy logic.
 - `cleanup`: teardown, state cleanup, and error-safe finalization.
-- `logging_utils`: simple local logging helpers.
 
 Shell scripts are acceptable when the task is truly simple, but Python is the default.
+
+**Use shared utilities instead of duplicating functionality. Do not create `logging_utils.py` or similar modules in script directories.**
 
 ## Scripts
 
