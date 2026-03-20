@@ -36,6 +36,7 @@ It is intentionally project-independent. Project rules, architecture, and implem
 - Surface blockers, conflicts, and irreversible actions before taking them.
 - Summaries should focus on what changed, what remains risky, and what was not verified.
 - When a change updates meta-rules, shared conventions, or documentation structure, check the affected docs for follow-on updates and call out any remaining gaps explicitly.
+- When explaining how something works, prefer pseudo code over lengthy prose. Keep it brief and focused on the core idea.
 
 ## Verification
 
