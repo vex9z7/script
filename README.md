@@ -19,6 +19,7 @@ The repository is organized by automation task. Each script lives in its own top
 ├── README.md
 ├── LICENSE
 ├── lock/                      # Shared utilities
+│   ├── README.md
 │   ├── __init__.py
 │   ├── file_lock.py
 │   └── tests/
@@ -30,14 +31,33 @@ The repository is organized by automation task. Each script lives in its own top
 
 The repository should grow by adding more script directories at the top level.
 
+## Shared Utilities
+
+Shared utilities are reusable modules that live in the root directory. They follow a consistent structure:
+
+```text
+<utility-name>/
+├── README.md                  # Purpose, usage, and API documentation
+├── __init__.py               # Public API exports
+├── <module>.py                # Implementation
+└── tests/                    # Unit tests
+    ├── __init__.py
+    └── test_<module>.py
+```
+
+Existing utilities:
+- `lock`: Process lock for preventing concurrent script runs.
+- `dotenv`: Environment variable loader from `.env` files.
+
 ## Script Conventions
 
 Each script directory should follow these rules:
 
+- `main.py`: entry point only; it should orchestrate the workflow, not hold all business logic. Must include `#!/usr/bin/env python3` shebang.
+- `config.py`: all user-editable settings in one place. Support environment variables for configuration.
 - `README.md`: purpose, configuration, execution model, and operational notes.
-- `main.py`: entry point only; it should orchestrate the workflow, not hold all business logic.
 - Package modules: implementation split by responsibility.
-- `config.py`: all user-editable settings in one place.
+- `.env.example`: example environment variables for configuration.
 
 Preferred Python module responsibilities:
 - `detect`: discover devices or inputs.
@@ -51,21 +71,6 @@ Shell scripts are acceptable when the task is truly simple, but Python is the de
 ## Scripts
 
 - `photo-import`: Imports photos and videos from a camera SD card on the NAS. See [photo-import/README.md](/home/dev/git/script/photo-import/README.md).
-
-## Shared Utilities
-
-### `lock`
-
-A cross-platform file-based process lock utility. Prevents multiple instances of a script from running simultaneously.
-
-See [lock/README.md](/home/dev/git/script/lock/README.md) for full documentation.
-
-```python
-from lock import ensure_locked
-
-lock = ensure_locked("/var/run/my-script.lock")
-# Exits with error if another instance is running
-```
 
 ## Development Approach
 
