@@ -3,6 +3,10 @@ import os
 import sys
 
 
+class LockError(Exception):
+    pass
+
+
 class ProcessLock:
     def __init__(self, lock_path):
         self.lock_path = lock_path
@@ -20,9 +24,9 @@ class ProcessLock:
             self._acquired = True
             self._lock_file.write(str(os.getpid()))
             self._lock_file.flush()
-        except OSError:
+        except OSError as e:
             self._lock_file.close()
-            raise
+            raise LockError(f"Failed to acquire lock: {e}") from e
 
     def release(self):
         if self._lock_file:

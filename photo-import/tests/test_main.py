@@ -7,12 +7,18 @@ from contextlib import contextmanager
 from config import Config
 from detect import CandidateDevice
 from photo_copy import CopyStats
-from process_lock import ProcessLockBusyError
+
+from lock import LockError, ProcessLock
 
 
 @contextmanager
 def _noop_lock(_lock_file):
-    yield
+    lock = ProcessLock(_lock_file)
+    lock.acquire()
+    try:
+        yield
+    finally:
+        lock.release()
 
 
 def test_main_returns_zero_when_no_candidate_devices(monkeypatch, tmp_path):
@@ -27,7 +33,7 @@ def test_main_returns_zero_when_no_candidate_devices(monkeypatch, tmp_path):
     monkeypatch.setattr(
         main_module, "build_logger", lambda *args, **kwargs: logging.getLogger("test")
     )
-    monkeypatch.setattr(main_module, "process_lock", _noop_lock)
+    monkeypatch.setattr(main_module, "ProcessLock", _MockProcessLock)
     monkeypatch.setattr(main_module, "is_mountpoint", lambda _: False)
     monkeypatch.setattr(main_module, "find_candidate_devices", lambda _: [])
 
@@ -56,7 +62,7 @@ def test_main_runs_successful_import_flow(monkeypatch, tmp_path):
     monkeypatch.setattr(
         main_module, "build_logger", lambda *args, **kwargs: logging.getLogger("test")
     )
-    monkeypatch.setattr(main_module, "process_lock", _noop_lock)
+    monkeypatch.setattr(main_module, "ProcessLock", _MockProcessLock)
     monkeypatch.setattr(main_module, "is_mountpoint", lambda _: False)
     monkeypatch.setattr(main_module, "find_candidate_devices", lambda _: [device])
     monkeypatch.setattr(
@@ -107,7 +113,7 @@ def test_main_returns_one_when_unmount_fails(monkeypatch, tmp_path):
     monkeypatch.setattr(
         main_module, "build_logger", lambda *args, **kwargs: logging.getLogger("test")
     )
-    monkeypatch.setattr(main_module, "process_lock", _noop_lock)
+    monkeypatch.setattr(main_module, "ProcessLock", _MockProcessLock)
     monkeypatch.setattr(main_module, "is_mountpoint", lambda _: False)
     monkeypatch.setattr(main_module, "find_candidate_devices", lambda _: [device])
     monkeypatch.setattr(main_module, "mount_device", lambda *args, **kwargs: None)
@@ -133,7 +139,7 @@ def test_main_returns_zero_when_lock_is_busy(monkeypatch, tmp_path):
 
     @contextmanager
     def busy_lock(_lock_file):
-        raise ProcessLockBusyError("busy")
+        raise LockError("busy")
         yield
 
     monkeypatch.setattr(main_module, "DEFAULT_CONFIG", config)
@@ -141,6 +147,17 @@ def test_main_returns_zero_when_lock_is_busy(monkeypatch, tmp_path):
     monkeypatch.setattr(
         main_module, "build_logger", lambda *args, **kwargs: logging.getLogger("test")
     )
-    monkeypatch.setattr(main_module, "process_lock", busy_lock)
+    monkeypatch.setattr(main_module, "ProcessLock", busy_lock)
 
     assert main_module.main() == 0
+
+
+class _MockProcessLock:
+    def __init__(self, lock_path):
+        self.lock_path = lock_path
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        pass

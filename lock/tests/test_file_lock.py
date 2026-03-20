@@ -5,7 +5,7 @@ import tempfile
 
 import pytest
 
-from lock import ProcessLock
+from lock import LockError, ProcessLock
 
 
 class TestProcessLock:
@@ -46,11 +46,11 @@ class TestProcessLock:
         lock = ProcessLock(lock_path)
         assert lock.is_locked() is False
 
-    def test_multiple_locks_same_path_fails(self, lock_path):
+    def test_acquire_raises_lock_error_when_already_locked(self, lock_path):
         lock1 = ProcessLock(lock_path)
         lock1.acquire()
         lock2 = ProcessLock(lock_path)
-        with pytest.raises(OSError):
+        with pytest.raises(LockError):
             lock2.acquire()
         lock1.release()
 

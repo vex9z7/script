@@ -11,8 +11,8 @@ from config import DEFAULT_CONFIG
 from detect import find_candidate_devices
 from mount import is_mountpoint, mount_device
 from photo_copy import copy_media_files
-from process_lock import ProcessLockBusyError, process_lock
 
+from lock import LockError, ProcessLock
 from log import build_logger
 
 
@@ -25,7 +25,7 @@ def main() -> int:
         return 1
 
     try:
-        with process_lock(config.lock_file):
+        with ProcessLock(config.lock_file):
             mount_point = Path(config.mount_point)
             destination_root = Path(config.destination_root)
 
@@ -84,7 +84,7 @@ def main() -> int:
 
                 logger.info("import completed successfully: %s", import_record)
                 return 0
-    except ProcessLockBusyError:
+    except LockError:
         logger.info("another photo-import process is already running; exiting")
         return 0
 
