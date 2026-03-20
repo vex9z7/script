@@ -1,5 +1,7 @@
 # TrueNAS Script Monorepo
 
+**Platform: Linux only**
+
 This repository is a monorepo for small operational scripts that run on a TrueNAS system.
 
 The design constraints are intentional:
@@ -10,37 +12,67 @@ The design constraints are intentional:
 
 ## Repository Layout
 
-The repository is organized by automation task. Each script lives in its own top-level directory.
+Each script or shared utility must live in its own top-level directory. This is a strict rule.
 
 ```text
 .
 ├── README.md
 ├── LICENSE
+├── lock/                      # Shared utility
+│   ├── README.md
+│   ├── __init__.py
+│   ├── file_lock.py
+│   └── tests/
+├── dotenv/                    # Shared utility
+│   ├── __init__.py
+│   └── tests/
+├── log/                       # Shared utility
+│   ├── __init__.py
+│   └── tests/
 └── <script-name>/
     ├── README.md
     ├── main.py
     └── ...
 ```
 
-The repository should grow by adding more script directories at the top level.
+## Shared Utilities
+
+Shared utilities are reusable modules that live in the root directory. They follow a consistent structure:
+
+```text
+<utility-name>/
+├── README.md                  # Purpose, usage, and API documentation
+├── __init__.py               # Public API exports
+├── <module>.py               # Implementation (optional)
+└── tests/                    # Unit tests
+    ├── __init__.py
+    └── test_<module>.py
+```
+
+Existing utilities:
+- `lock`: Process lock for preventing concurrent script runs.
+- `dotenv`: Environment variable loader from `.env` files.
+- `log`: Configurable logger with file output support.
 
 ## Script Conventions
 
 Each script directory should follow these rules:
 
+- `main.py`: entry point only; it should orchestrate the workflow, not hold all business logic. Must include `#!/usr/bin/env python3` shebang.
+- `config.py`: all user-editable settings in one place. Support environment variables for configuration.
 - `README.md`: purpose, configuration, execution model, and operational notes.
-- `main.py`: entry point only; it should orchestrate the workflow, not hold all business logic.
 - Package modules: implementation split by responsibility.
-- `config.py`: all user-editable settings in one place.
+- `.env.example`: example environment variables for configuration.
 
 Preferred Python module responsibilities:
 - `detect`: discover devices or inputs.
 - `mount`: mount and unmount storage.
 - `photo_copy`: file-selection and copy logic.
 - `cleanup`: teardown, state cleanup, and error-safe finalization.
-- `logging_utils`: simple local logging helpers.
 
 Shell scripts are acceptable when the task is truly simple, but Python is the default.
+
+**Do not duplicate shared utilities.** If a module with similar functionality exists (e.g., `lock`, `dotenv`, `log`), use it instead of creating a new implementation. Duplication is not tolerated.
 
 ## Scripts
 

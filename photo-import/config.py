@@ -1,13 +1,30 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
+
+import dotenv
+
+dotenv.load_dotenv()
 
 
 @dataclass(frozen=True)
 class Config:
-    mount_point: Path = Path("/mnt/camera-sd-card")
-    destination_root: Path = Path("/mnt/tank/photo/import")
+    log_file: Path | None = (
+        Path(os.environ.get("PHOTO_IMPORT_LOG_FILE", "/var/log/photo-import.log"))
+        if os.environ.get("PHOTO_IMPORT_LOG_FILE")
+        else None
+    )
+    lock_file: Path = Path(
+        os.environ.get("PHOTO_IMPORT_LOCK_FILE", "/tmp/photo-import.lock")
+    )
+    mount_point: Path = Path(
+        os.environ.get("PHOTO_IMPORT_MOUNT_POINT", "/mnt/camera-sd-card")
+    )
+    destination_root: Path = Path(
+        os.environ.get("PHOTO_IMPORT_DESTINATION_ROOT", "/mnt/tank/photo/import")
+    )
     read_only: bool = True
     supported_filesystems: tuple[str, ...] = ("exfat", "vfat", "fat32")
     required_dir_names: tuple[str, ...] = ("DCIM",)
