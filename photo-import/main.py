@@ -10,7 +10,7 @@ from cleanup import safe_unmount
 from config import DEFAULT_CONFIG
 from detect import find_candidate_devices
 from mount import is_mountpoint, mount_device
-from photo_copy import copy_media_files
+from photo_sync import sync_media
 
 from lock import LockError, ProcessLock
 from log import build_logger
@@ -59,7 +59,7 @@ def main() -> int:
                     mount_device(device.path, mount_point, read_only=config.read_only)
                     mounted = True
 
-                    stats = copy_media_files(config, logger, device)
+                    stats = sync_media(config, logger, device)
                     import_record = {
                         "device": device.path,
                         "label": device.label,
@@ -69,8 +69,8 @@ def main() -> int:
                         "mounted_at": datetime.now().isoformat(timespec="seconds"),
                         "mount_point": str(mount_point),
                         "destination_root": str(destination_root),
-                        "copied_files": stats.copied_files,
-                        "skipped_existing": stats.skipped_existing,
+                        "synced_files": stats.synced_files,
+                        "skipped": stats.skipped,
                         "filtered_out": stats.filtered_out,
                     }
                 except Exception as exc:

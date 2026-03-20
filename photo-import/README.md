@@ -32,7 +32,7 @@ photo-import/
 ├── config.py
 ├── detect.py
 ├── mount.py
-├── photo_copy.py
+├── photo_sync.py
 ├── cleanup.py
 ├── .env.example
 └── tests/
@@ -42,6 +42,8 @@ Uses shared modules from root:
 - `lock`: Process locking via `lock/ProcessLock`
 - `log`: Logging via `log/build_logger`
 - `dotenv`: Environment variable loading via `dotenv/load_dotenv`
+- `sync`: File synchronization via `sync/sync`
+- `fingerprint`: File comparison via `fingerprint/get_fingerprint`
 
 The unit tests for this script live under `photo-import/tests/`.
 
@@ -68,11 +70,11 @@ The unit tests for this script live under `photo-import/tests/`.
 - Check whether the mount succeeded.
 - Unmount reliably during cleanup.
 
-`photo_copy.py`
-- Walk the mounted filesystem.
+`photo_sync.py`
+- Walk the mounted filesystem using `sync`.
 - Select files by configured extension set.
 - Exclude thumbnails, caches, and preview files.
-- Copy to the destination folder using standard-library utilities.
+- Sync to the destination folder with fingerprint-based comparison.
 
 `cleanup.py`
 - Centralize final unmount and state cleanup behavior.
@@ -117,5 +119,6 @@ The script expects root privileges because it mounts and unmounts block devices.
 - Device discovery is based on `lsblk`.
 - Candidate partitions are limited to configured filesystem types.
 - The mounted card must contain at least one configured required directory such as `DCIM`.
-- The copy step preserves the relative directory layout under the configured destination root.
-- Existing destination files are skipped by default instead of overwritten.
+- The sync step uses fingerprint comparison (size + mtime) to determine if files match.
+- Extra files in destination are deleted to make destination match source.
+- Existing destination files with matching fingerprint are skipped.

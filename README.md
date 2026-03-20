@@ -18,15 +18,21 @@ Each script or shared utility must live in its own top-level directory. This is 
 .
 ├── README.md
 ├── LICENSE
-├── lock/                      # Shared utility
+├── fingerprint/              # Shared utility
+│   ├── __init__.py
+│   └── tests/
+├── lock/                    # Shared utility
 │   ├── README.md
 │   ├── __init__.py
 │   ├── file_lock.py
 │   └── tests/
-├── dotenv/                    # Shared utility
+├── dotenv/                  # Shared utility
 │   ├── __init__.py
 │   └── tests/
-├── log/                       # Shared utility
+├── log/                     # Shared utility
+│   ├── __init__.py
+│   └── tests/
+├── sync/                    # Shared utility
 │   ├── __init__.py
 │   └── tests/
 └── <script-name>/
@@ -50,9 +56,11 @@ Shared utilities are reusable modules that live in the root directory. They foll
 ```
 
 Existing utilities:
+- `fingerprint`: File fingerprint comparison using size and mtime.
 - `lock`: Process lock for preventing concurrent script runs.
 - `dotenv`: Environment variable loader from `.env` files.
 - `log`: Configurable logger with file output support.
+- `sync`: File synchronization using fingerprint comparison.
 
 ## Script Conventions
 
@@ -67,12 +75,11 @@ Each script directory should follow these rules:
 Preferred Python module responsibilities:
 - `detect`: discover devices or inputs.
 - `mount`: mount and unmount storage.
-- `photo_copy`: file-selection and copy logic.
 - `cleanup`: teardown, state cleanup, and error-safe finalization.
 
 Shell scripts are acceptable when the task is truly simple, but Python is the default.
 
-**Do not duplicate shared utilities.** If a module with similar functionality exists (e.g., `lock`, `dotenv`, `log`), use it instead of creating a new implementation. Duplication is not tolerated.
+**Do not duplicate shared utilities.** If a module with similar functionality exists (e.g., `sync`, `fingerprint`, `lock`, `dotenv`, `log`), use it instead of creating a new implementation. Duplication is not tolerated.
 
 ## Scripts
 

@@ -6,7 +6,7 @@ from contextlib import contextmanager
 
 from config import Config
 from detect import CandidateDevice
-from photo_copy import CopyStats
+from photo_sync import SyncStats
 
 from lock import LockError, ProcessLock
 
@@ -74,10 +74,10 @@ def test_main_runs_successful_import_flow(monkeypatch, tmp_path):
     )
     monkeypatch.setattr(
         main_module,
-        "copy_media_files",
+        "sync_media",
         lambda config_value, logger, device_value: (
-            calls.append(("copy", config_value.destination_root, device_value.path))
-            or CopyStats(copied_files=3, skipped_existing=1, filtered_out=2)
+            calls.append(("sync", config_value.destination_root, device_value.path))
+            or SyncStats(synced_files=3, skipped=1, filtered_out=2)
         ),
     )
     monkeypatch.setattr(
@@ -88,7 +88,7 @@ def test_main_runs_successful_import_flow(monkeypatch, tmp_path):
 
     assert main_module.main() == 0
     assert calls[0] == ("mount", device.path, config.mount_point, config.read_only)
-    assert calls[1] == ("copy", config.destination_root, device.path)
+    assert calls[1] == ("sync", config.destination_root, device.path)
     assert calls[2] == ("unmount", config.mount_point)
 
 
@@ -119,10 +119,8 @@ def test_main_returns_one_when_unmount_fails(monkeypatch, tmp_path):
     monkeypatch.setattr(main_module, "mount_device", lambda *args, **kwargs: None)
     monkeypatch.setattr(
         main_module,
-        "copy_media_files",
-        lambda *args, **kwargs: CopyStats(
-            copied_files=1, skipped_existing=0, filtered_out=0
-        ),
+        "sync_media",
+        lambda *args, **kwargs: SyncStats(synced_files=1, skipped=0, filtered_out=0),
     )
     monkeypatch.setattr(main_module, "safe_unmount", lambda *args, **kwargs: False)
 
