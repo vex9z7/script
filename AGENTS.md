@@ -43,3 +43,9 @@ It is intentionally project-independent. Project rules, architecture, and implem
 - At minimum, run unit tests when the codebase has them and they are relevant to the change.
 - If relevant tests do not exist, explicitly call out the coverage gap and suggest adding unit tests.
 - If verification cannot be completed, state what was not run and why.
+
+## Version Control
+
+- ALWAYS show the user the changes (via `git diff` or summary) before committing.
+- MUST NOT commit or push without explicit user approval.
+- If the user asks to commit, present the diff and ask for confirmation before executing `git commit`.
