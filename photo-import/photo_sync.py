@@ -3,6 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from _bootstrap import ensure_repo_root_on_path
+
+ensure_repo_root_on_path()
 from config import Config
 from detect import CandidateDevice
 from fnmatchplus import match

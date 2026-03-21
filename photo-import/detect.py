@@ -4,6 +4,9 @@ import json
 import subprocess
 from dataclasses import dataclass
 
+from _bootstrap import ensure_repo_root_on_path
+
+ensure_repo_root_on_path()
 from config import Config
 from fnmatchplus import match_any
 

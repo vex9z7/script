@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import importlib
 import logging
+import os
+import subprocess
+import sys
+from pathlib import Path
 
 from config import Config
 from conftest import make_mock_process_lock
@@ -112,6 +116,28 @@ def test_main_returns_one_when_config_missing(monkeypatch):
     monkeypatch.delenv("PHOTO_IMPORT_DESTINATION_ROOT", raising=False)
 
     assert main_module.main() == 1
+
+
+def test_main_script_runs_without_repo_install(monkeypatch):
+    repo_root = Path(__file__).resolve().parents[2]
+    script_path = repo_root / "photo-import" / "main.py"
+    env = dict(os.environ)
+
+    env.pop("PHOTO_IMPORT_MOUNT_POINT", None)
+    env.pop("PHOTO_IMPORT_DESTINATION_ROOT", None)
+
+    result = subprocess.run(
+        [sys.executable, str(script_path)],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        check=False,
+        env=env,
+    )
+
+    assert result.returncode == 1
+    assert "Configuration error:" in result.stderr
+    assert "ModuleNotFoundError" not in result.stderr
 
 
 def test_main_returns_one_when_not_root(monkeypatch, tmp_path):

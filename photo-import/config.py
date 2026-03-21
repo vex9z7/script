@@ -4,6 +4,9 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from _bootstrap import ensure_repo_root_on_path
+
+ensure_repo_root_on_path()
 import dotenv
 
 dotenv.load_dotenv()

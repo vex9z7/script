@@ -4,6 +4,10 @@ from __future__ import annotations
 import os
 import sys
 
+from _bootstrap import ensure_repo_root_on_path
+
+ensure_repo_root_on_path()
+
 from cleanup import safe_unmount
 from config import ConfigurationError, load_config
 from detect import find_candidate_devices
@@ -22,14 +26,17 @@ def main() -> int:
         return 1
 
     logger = build_logger("photo_import", log_file=config.log_file)
+    assert config.mount_point is not None
+
+    mount_point = config.mount_point
 
     if os.geteuid() != 0:
         logger.error("must run as root")
         return 1
 
     with FileLock(config.lock_file):
-        if is_mountpoint(config.mount_point):
-            logger.warning("mount point %s is already active", config.mount_point)
+        if is_mountpoint(mount_point):
+            logger.warning("mount point %s is already active", mount_point)
             return 1
 
         candidates = find_candidate_devices(config)
@@ -39,19 +46,17 @@ def main() -> int:
 
         for device in candidates:
             try:
-                mount_device(
-                    device.path, config.mount_point, read_only=config.read_only
-                )
+                mount_device(device.path, mount_point, read_only=config.read_only)
                 stats = sync_media(config, logger, device)
                 logger.info(
                     "imported %s files from %s", stats.synced_files, device.label
                 )
             except Exception as exc:
                 logger.exception("device %s failed: %s", device.path, exc)
-                safe_unmount(config.mount_point, logger)
+                safe_unmount(mount_point, logger)
                 continue
 
-            if not safe_unmount(config.mount_point, logger):
+            if not safe_unmount(mount_point, logger):
                 return 1
             return 0
 
