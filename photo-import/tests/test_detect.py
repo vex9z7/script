@@ -128,7 +128,7 @@ class TestFindCandidateDevices:
         candidates = find_candidate_devices(config)
 
         # Assert
-        assert candidates == []
+        assert not candidates
 
 
 class TestFindCandidateDevicesWithPatterns:

@@ -67,4 +67,26 @@ def _should_skip(source: Path, destination: Path, strict: bool) -> bool:
     src_fp = get_fingerprint(source)
     dst_fp = get_fingerprint(destination)
 
-    return fingerprints_match(src_fp, dst_fp)
+    if not fingerprints_match(src_fp, dst_fp):
+        return False
+
+    if not strict:
+        return True
+
+    return _files_match_strict(source, destination)
+
+
+def _files_match_strict(source: Path, destination: Path) -> bool:
+    with (
+        source.open("rb") as source_handle,
+        destination.open("rb") as destination_handle,
+    ):
+        while True:
+            source_chunk = source_handle.read(8192)
+            destination_chunk = destination_handle.read(8192)
+
+            if source_chunk != destination_chunk:
+                return False
+
+            if not source_chunk:
+                return True

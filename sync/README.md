@@ -81,7 +81,7 @@ class SyncStats:
 1. Walk source directory, apply filter if provided
 2. For each source file:
     - If destination doesn't exist → copy
-    - If fingerprint matches → skip (non-strict) or verify content (strict)
+    - If fingerprint matches → skip (non-strict) or verify full file contents (strict)
     - If fingerprint differs → copy
 3. After sync, delete files in destination not present in source
 
@@ -102,12 +102,15 @@ sync(source, dest, filter=my_filter)
 
 ## Strict Mode
 
-| Mode | Fingerprint matches | Action |
-|------|---------------------|--------|
-| Non-strict | Yes | Skip (trust fingerprint) |
-| Non-strict | No | Copy |
-| Strict | Yes | Verify content (hash), skip if identical |
-| Strict | No | Copy |
+| Mode | File comparison | Action |
+|------|-----------------|--------|
+| Non-strict | Fingerprint matches | Skip |
+| Non-strict | Fingerprint differs | Copy |
+| Strict | Fingerprint differs | Copy |
+| Strict | Fingerprint matches, content matches | Skip |
+| Strict | Fingerprint matches, content differs | Copy |
+
+In strict mode, directory behavior comes from recursively checking each file in the tree. `sync` does not trust directory fingerprints for strict equality; it walks the directory and applies strict file comparison to each encountered file.
 
 ## Testing
 

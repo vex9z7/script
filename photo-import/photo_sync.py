@@ -18,9 +18,15 @@ class SyncStats:
 
 
 def sync_media(config: Config, logger, device: CandidateDevice) -> SyncStats:
-    config.destination_root.mkdir(parents=True, exist_ok=True)
+    assert config.mount_point is not None
+    assert config.destination_root is not None
 
-    if not _has_required_layout(config.mount_point, config):
+    mount_point = config.mount_point
+    destination_root = config.destination_root
+
+    destination_root.mkdir(parents=True, exist_ok=True)
+
+    if not _has_required_layout(mount_point, config):
         raise RuntimeError(
             "mounted device "
             f"{device.path} does not contain any of {config.required_dir_names}"
@@ -28,7 +34,7 @@ def sync_media(config: Config, logger, device: CandidateDevice) -> SyncStats:
 
     filtered_out_count = 0
 
-    def filter(path: Path) -> bool:
+    def path_filter(path: Path) -> bool:
         if path.is_dir():
             _, excluded = match(path.name, config.excluded_patterns)
             return not excluded
@@ -50,9 +56,9 @@ def sync_media(config: Config, logger, device: CandidateDevice) -> SyncStats:
         return False
 
     sync_stats = sync(
-        source=config.mount_point,
-        destination=config.destination_root,
-        filter=filter,
+        source=mount_point,
+        destination=destination_root,
+        filter=path_filter,
     )
 
     if sync_stats.copied:

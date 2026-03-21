@@ -125,6 +125,8 @@ class TestSync:
         assert not (dest / "delete.txt").exists()
 
     def test_sync_strict_compares_content_when_fingerprint_matches(self, tmp_path):
+        from fingerprint import Fingerprint
+
         source = tmp_path / "source"
         dest = tmp_path / "dest"
         source.mkdir()
@@ -132,8 +134,101 @@ class TestSync:
         (source / "file.txt").write_text("content1")
         (dest / "file.txt").write_text("content2")
 
-        stats = sync(source, dest, strict=True)
+        def mock_get_fingerprint(path):
+            return Fingerprint(
+                is_file=True,
+                mtime=1000.0,
+                ctime=1001.0,
+                size=8,
+                extension=".txt",
+                get_sha256=lambda: "shared-hash",
+            )
+
+        with patch("sync.get_fingerprint", side_effect=mock_get_fingerprint):
+            stats = sync(source, dest, strict=True)
 
         assert stats.copied == 1
         assert stats.skipped == 0
         assert (dest / "file.txt").read_text() == "content1"
+
+    def test_sync_non_strict_skips_when_fingerprint_matches(self, tmp_path):
+        from fingerprint import Fingerprint
+
+        source = tmp_path / "source"
+        dest = tmp_path / "dest"
+        source.mkdir()
+        dest.mkdir()
+        (source / "file.txt").write_text("content1")
+        (dest / "file.txt").write_text("content2")
+
+        def mock_get_fingerprint(path):
+            return Fingerprint(
+                is_file=True,
+                mtime=1000.0,
+                ctime=1001.0,
+                size=8,
+                extension=".txt",
+                get_sha256=lambda: "shared-hash",
+            )
+
+        with patch("sync.get_fingerprint", side_effect=mock_get_fingerprint):
+            stats = sync(source, dest, strict=False)
+
+        assert stats.copied == 0
+        assert stats.skipped == 1
+        assert (dest / "file.txt").read_text() == "content2"
+
+    def test_sync_strict_skips_when_file_content_matches(self, tmp_path):
+        from fingerprint import Fingerprint
+
+        source = tmp_path / "source"
+        dest = tmp_path / "dest"
+        source.mkdir()
+        dest.mkdir()
+        (source / "file.txt").write_text("content")
+        (dest / "file.txt").write_text("content")
+
+        def mock_get_fingerprint(path):
+            return Fingerprint(
+                is_file=True,
+                mtime=1000.0,
+                ctime=1001.0,
+                size=7,
+                extension=".txt",
+                get_sha256=lambda: "shared-hash",
+            )
+
+        with patch("sync.get_fingerprint", side_effect=mock_get_fingerprint):
+            stats = sync(source, dest, strict=True)
+
+        assert stats.copied == 0
+        assert stats.skipped == 1
+
+    def test_sync_strict_checks_nested_files_recursively(self, tmp_path):
+        from fingerprint import Fingerprint
+
+        source = tmp_path / "source"
+        dest = tmp_path / "dest"
+        source_nested = source / "nested"
+        dest_nested = dest / "nested"
+        source_nested.mkdir(parents=True)
+        dest_nested.mkdir(parents=True)
+        (source_nested / "file.txt").write_text("source-content")
+        (dest_nested / "file.txt").write_text("dest-content")
+
+        def mock_get_fingerprint(path):
+            return Fingerprint(
+                is_file=True,
+                mtime=1000.0,
+                ctime=1001.0,
+                size=12,
+                extension=".txt",
+                get_sha256=lambda: "shared-hash",
+            )
+
+        with patch("sync.get_fingerprint", side_effect=mock_get_fingerprint):
+            stats = sync(source, dest, strict=True)
+
+        assert stats.copied == 1
+        assert stats.skipped == 0
+        assert (dest_nested / "file.txt").read_text() == "source-content"

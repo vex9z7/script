@@ -52,15 +52,15 @@ def get_fingerprint(path: Path) -> Fingerprint:
             get_chunk=read_chunk,
             get_sha256=compute_sha256,
         )
-    else:
-        children = list(path.iterdir())
-        return Fingerprint(
-            is_file=False,
-            mtime=stat.st_mtime,
-            ctime=stat.st_ctime,
-            file_count=sum(1 for c in children if c.is_file()),
-            dir_count=sum(1 for c in children if c.is_dir()),
-        )
+
+    children = list(path.iterdir())
+    return Fingerprint(
+        is_file=False,
+        mtime=stat.st_mtime,
+        ctime=stat.st_ctime,
+        file_count=sum(1 for c in children if c.is_file()),
+        dir_count=sum(1 for c in children if c.is_dir()),
+    )
 
 
 def fingerprints_match(a: Fingerprint, b: Fingerprint) -> bool:
