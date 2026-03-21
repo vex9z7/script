@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 from collections.abc import Mapping
 from dataclasses import dataclass, field
@@ -20,6 +21,14 @@ def _required_path(env: Mapping[str, str], name: str) -> Path:
     if not value:
         raise ConfigurationError(f"{name} is not set")
     return Path(value)
+
+
+def _log_level(env: Mapping[str, str], name: str) -> int:
+    value = (env.get(name) or "INFO").strip().upper()
+    level = getattr(logging, value, None)
+    if not isinstance(level, int):
+        raise ConfigurationError(f"{name} is invalid: {value}")
+    return level
 
 
 def _load_patterns(path: Path) -> list[tuple[str, bool]]:
@@ -50,6 +59,7 @@ _DEVICE_PATTERNS = _load_patterns(_THIS_DIR / ".deviceignore")
 @dataclass(frozen=True)
 class Config:
     log_file: Path | None = None
+    log_level: int = logging.INFO
     lock_file: Path = Path()
     mount_point: Path | None = field(default=None)
     destination_root: Path | None = field(default=None)
@@ -82,6 +92,7 @@ def load_config(env: Mapping[str, str] | None = None) -> Config:
 
     return Config(
         log_file=_optional_path(env_values, "PHOTO_IMPORT_LOG_FILE"),
+        log_level=_log_level(env_values, "PHOTO_IMPORT_LOG_LEVEL"),
         lock_file=_required_path(env_values, "PHOTO_IMPORT_LOCK_FILE"),
         mount_point=Path(mount_point),
         destination_root=Path(destination_root),

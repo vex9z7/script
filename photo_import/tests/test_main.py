@@ -26,7 +26,9 @@ def test_main_returns_zero_when_no_candidate_devices(monkeypatch, tmp_path):
     )
     monkeypatch.setattr(main_module, "FileLock", make_mock_process_lock())
     monkeypatch.setattr(main_module, "is_mountpoint", lambda _: False)
-    monkeypatch.setattr(main_module, "find_candidate_devices", lambda _: [])
+    monkeypatch.setattr(
+        main_module, "find_candidate_devices", lambda _, logger=None: []
+    )
 
     assert main_module.main() == 0
 
@@ -47,7 +49,9 @@ def test_main_runs_successful_import_flow(monkeypatch, tmp_path, candidate_devic
     monkeypatch.setattr(main_module, "FileLock", make_mock_process_lock())
     monkeypatch.setattr(main_module, "is_mountpoint", lambda _: False)
     monkeypatch.setattr(
-        main_module, "find_candidate_devices", lambda _: [candidate_device]
+        main_module,
+        "find_candidate_devices",
+        lambda _, logger=None: [candidate_device],
     )
     monkeypatch.setattr(
         main_module,
@@ -96,7 +100,9 @@ def test_main_returns_one_when_unmount_fails(monkeypatch, tmp_path, candidate_de
     monkeypatch.setattr(main_module, "FileLock", make_mock_process_lock())
     monkeypatch.setattr(main_module, "is_mountpoint", lambda _: False)
     monkeypatch.setattr(
-        main_module, "find_candidate_devices", lambda _: [candidate_device]
+        main_module,
+        "find_candidate_devices",
+        lambda _, logger=None: [candidate_device],
     )
     monkeypatch.setattr(main_module, "mount_device", lambda *args, **kwargs: None)
     monkeypatch.setattr(
@@ -196,7 +202,9 @@ def test_main_continues_to_next_device_when_one_fails(
     monkeypatch.setattr(main_module, "FileLock", make_mock_process_lock())
     monkeypatch.setattr(main_module, "is_mountpoint", lambda _: False)
     monkeypatch.setattr(
-        main_module, "find_candidate_devices", lambda _: [candidate_device]
+        main_module,
+        "find_candidate_devices",
+        lambda _, logger=None: [candidate_device],
     )
     monkeypatch.setattr(main_module, "mount_device", lambda *args, **kwargs: None)
     monkeypatch.setattr(main_module, "sync_media", mock_sync_that_fails)

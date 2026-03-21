@@ -23,5 +23,5 @@ disable=
 max-line-length=100
 
 [DESIGN]
-max-attributes=10
+max-attributes=12
 max-returns=8

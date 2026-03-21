@@ -87,6 +87,7 @@ The unit tests for this script live under `photo_import/tests/`.
 The following items are configurable in `config.py`:
 
 - `log_file`: Optional path to log file (default: stdout/stderr)
+- `log_level`: Logging threshold such as `INFO` or `DEBUG` (default: `INFO`)
 - `lock_file`: Path to lock file (default: `/tmp/photo-import.lock`)
 - `mount_point`: Mount point for SD card (default: `/mnt/camera-sd-card`)
 - `destination_root`: Destination for imported files
@@ -104,6 +105,7 @@ All paths can be configured via environment variables. See `.env.example`.
 - Read-only mounting is the default for safety.
 - The import step should preserve source data and must not mutate the SD card.
 - Logging defaults to stdout/stderr. Set `PHOTO_IMPORT_LOG_FILE` to a file path if you want file logging.
+- Set `PHOTO_IMPORT_LOG_LEVEL=DEBUG` to log why each block device is accepted or rejected during detection.
 - A process lock prevents concurrent runs when scheduled from cron.
 
 ## Usage
