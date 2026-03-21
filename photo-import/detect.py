@@ -22,6 +22,7 @@ def run(cmd: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(cmd, text=True, capture_output=True, check=True)
 
 
+# System dependency: requires `lsblk` from util-linux
 def get_lsblk() -> dict:
     result = run(
         [

@@ -85,6 +85,18 @@ Shell scripts are acceptable when the task is truly simple, but Python is the de
 
 - `photo-import`: Imports photos and videos from a camera SD card on the NAS. See [photo-import/README.md](/home/dev/git/script/photo-import/README.md).
 
+### System Dependencies
+
+Each script must explicitly list its external system tool dependencies. These are standard Linux/TrueNAS tools assumed to be present on the system.
+
+**photo-import:**
+| Tool | Purpose | Source |
+|------|---------|--------|
+| `lsblk` | List block devices | util-linux (core) |
+| `mount` | Mount storage devices | util-linux (core) |
+| `umount` | Unmount storage devices | util-linux (core) |
+| `mountpoint` | Check if path is mount point | util-linux (core) |
+
 ## Development Approach
 
 This repository is meant for maintainable automation, not throwaway one-file scripts.

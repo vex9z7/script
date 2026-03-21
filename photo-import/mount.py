@@ -4,6 +4,7 @@ import subprocess
 from pathlib import Path
 
 
+# System dependencies: requires mountpoint, mount, umount from util-linux
 def is_mountpoint(path: Path) -> bool:
     result = subprocess.run(
         ["mountpoint", "-q", str(path)],
