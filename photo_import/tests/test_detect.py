@@ -210,6 +210,84 @@ class TestFindCandidateDevices:
             "accepted: fstype=vfat, label=CARD, rm=1, tran=mmc",
         )
 
+    def test_should_accept_partition_when_parent_transport_is_usb(
+        self, monkeypatch, tmp_path
+    ):
+        config = Config(
+            mount_point=tmp_path / "mount",
+            destination_root=tmp_path / "dest",
+        )
+        lsblk_data = {
+            "blockdevices": [
+                {
+                    "name": "sde",
+                    "path": "/dev/sde",
+                    "type": "disk",
+                    "rm": 1,
+                    "tran": "usb",
+                    "children": [
+                        {
+                            "name": "sde1",
+                            "path": "/dev/sde1",
+                            "type": "part",
+                            "fstype": "exfat",
+                            "mountpoint": None,
+                            "label": "SD_Card",
+                            "rm": 1,
+                            "size": "64G",
+                            "model": None,
+                            "tran": None,
+                        }
+                    ],
+                }
+            ]
+        }
+
+        monkeypatch.setattr("photo_import.detect.get_lsblk", lambda: lsblk_data)
+
+        candidates = find_candidate_devices(config)
+
+        assert [device.path for device in candidates] == ["/dev/sde1"]
+
+    def test_should_reject_partition_when_parent_transport_is_unsupported(
+        self, monkeypatch, tmp_path
+    ):
+        config = Config(
+            mount_point=tmp_path / "mount",
+            destination_root=tmp_path / "dest",
+        )
+        lsblk_data = {
+            "blockdevices": [
+                {
+                    "name": "nvme0n1",
+                    "path": "/dev/nvme0n1",
+                    "type": "disk",
+                    "rm": 1,
+                    "tran": "nvme",
+                    "children": [
+                        {
+                            "name": "nvme0n1p1",
+                            "path": "/dev/nvme0n1p1",
+                            "type": "part",
+                            "fstype": "exfat",
+                            "mountpoint": None,
+                            "label": "MAYBE_CARD",
+                            "rm": 1,
+                            "size": "64G",
+                            "model": None,
+                            "tran": None,
+                        }
+                    ],
+                }
+            ]
+        }
+
+        monkeypatch.setattr("photo_import.detect.get_lsblk", lambda: lsblk_data)
+
+        candidates = find_candidate_devices(config)
+
+        assert not candidates
+
 
 class TestFindCandidateDevicesWithPatterns:
     def test_should_filter_devices_by_patterns(self, monkeypatch, tmp_path):

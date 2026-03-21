@@ -55,16 +55,34 @@ def flatten_blockdevices(devices: list[dict]) -> list[dict]:
     return result
 
 
+def _parent_device_map(
+    devices: list[dict], parent: dict | None = None
+) -> dict[str, dict]:
+    parents = {}
+
+    for device in devices:
+        path = device.get("path")
+        if path and parent is not None:
+            parents[path] = parent
+        parents.update(_parent_device_map(device.get("children") or [], device))
+
+    return parents
+
+
 def find_candidate_devices(
     config: Config, logger: logging.Logger | None = None
 ) -> list[CandidateDevice]:
     data = get_lsblk()
-    devices = flatten_blockdevices(data.get("blockdevices", []))
+    blockdevices = data.get("blockdevices", [])
+    devices = flatten_blockdevices(blockdevices)
+    parent_map = _parent_device_map(blockdevices)
     candidates = []
 
     for device in devices:
-        accepted, reason = _candidate_status(device, config)
-        path = device.get("path") or device.get("name") or "<unknown>"
+        path = device.get("path")
+        parent = parent_map.get(path) if path else None
+        accepted, reason = _candidate_status(device, config, parent)
+        path = path or device.get("name") or "<unknown>"
 
         if logger is not None:
             logger.debug("device %s %s", path, reason)
@@ -77,7 +95,9 @@ def find_candidate_devices(
     return candidates
 
 
-def _candidate_status(device: dict, config: Config) -> tuple[bool, str]:
+def _candidate_status(
+    device: dict, config: Config, parent: dict | None = None
+) -> tuple[bool, str]:
     if device.get("type") != "part":
         return False, f"rejected: type={device.get('type')}, expected part"
 
@@ -95,15 +115,26 @@ def _candidate_status(device: dict, config: Config) -> tuple[bool, str]:
     if not _parse_rm(device.get("rm")):
         return False, f"rejected: rm={device.get('rm')}, not removable"
 
-    transport = (device.get("tran") or "").lower()
-    if transport not in _REMOVABLE_TRANSPORTS:
-        return False, f"rejected: unsupported transport {transport or '<none>'}"
+    transport = _effective_transport(device, parent)
+    if transport and transport not in _REMOVABLE_TRANSPORTS:
+        return False, f"rejected: unsupported transport {transport}"
 
     return True, (
         "accepted: "
         f"fstype={fstype}, label={device.get('label') or '<none>'}, "
-        f"rm={device.get('rm')}, tran={transport}"
+        f"rm={device.get('rm')}, tran={transport or '<none>'}"
     )
+
+
+def _effective_transport(device: dict, parent: dict | None) -> str:
+    transport = (device.get("tran") or "").lower()
+    if transport:
+        return transport
+
+    if parent is None:
+        return ""
+
+    return (parent.get("tran") or "").lower()
 
 
 def _to_candidate(device: dict) -> CandidateDevice:
