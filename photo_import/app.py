@@ -5,6 +5,7 @@ import sys
 
 from photo_import.cleanup import safe_unmount
 from photo_import.config import ConfigurationError, load_config
+from photo_import.detect import CandidateDevice
 from photo_import.detect import find_candidate_devices
 from photo_import.mount import is_mountpoint, mount_device
 from photo_import.photo_sync import sync_media
@@ -35,8 +36,27 @@ def main() -> int:
 
     with FileLock(config.lock_file):
         if is_mountpoint(mount_point):
-            logger.warning("mount point %s is already active", mount_point)
-            return 1
+            logger.info("mount point %s is already active; reusing it", mount_point)
+            mounted_device = CandidateDevice(
+                path=str(mount_point),
+                fstype="mounted",
+                label="mounted-device",
+                size=None,
+                removable=None,
+                model=None,
+                transport=None,
+            )
+
+            try:
+                stats = sync_media(config, logger, mounted_device)
+            except Exception as exc:
+                logger.exception("existing mount %s failed: %s", mount_point, exc)
+                return 1
+
+            logger.info(
+                "imported %s files from %s", stats.synced_files, mounted_device.label
+            )
+            return 0
 
         candidates = find_candidate_devices(config, logger=logger)
         if not candidates:
