@@ -116,6 +116,12 @@ python3 /mnt/tank/script/run.py photo_import
 
 This entrypoint is intended to be stable for cron-style execution where the working directory is unknown.
 
+To verify the repo entrypoint and imports without running the script logic:
+
+```bash
+python3 /mnt/tank/script/run.py importcheck
+```
+
 The script expects root privileges because it mounts and unmounts block devices.
 
 ## Notes On Current Behavior

@@ -51,6 +51,44 @@ def test_run_returns_error_when_script_name_missing(capsys):
     assert "Available scripts: photo_import" in captured.err
 
 
+def test_importcheck_uses_manifest_when_no_module_given(monkeypatch, capsys):
+    run_module = importlib.import_module("run")
+    imported = []
+
+    def fake_import(name):
+        imported.append(name)
+
+    monkeypatch.setattr(
+        run_module,
+        "_load_importcheck_modules",
+        lambda: ["alpha.module", "beta.module"],
+    )
+    monkeypatch.setattr(run_module.importlib, "import_module", fake_import)
+
+    assert run_module.main(["importcheck"]) == 0
+    assert imported == ["alpha.module", "beta.module"]
+
+    captured = capsys.readouterr()
+    assert "OK alpha.module" in captured.out
+    assert "OK beta.module" in captured.out
+
+
+def test_importcheck_reports_failure(monkeypatch, capsys):
+    run_module = importlib.import_module("run")
+
+    def fake_import(name):
+        if name == "broken.module":
+            raise ModuleNotFoundError("missing dependency")
+
+    monkeypatch.setattr(run_module.importlib, "import_module", fake_import)
+
+    assert run_module.main(["importcheck", "ok.module", "broken.module"]) == 1
+
+    captured = capsys.readouterr()
+    assert "OK ok.module" in captured.out
+    assert "FAIL broken.module: ModuleNotFoundError: missing dependency" in captured.err
+
+
 def test_run_py_is_portable_from_arbitrary_cwd(tmp_path):
     repo_root = Path(__file__).resolve().parents[2]
     run_path = repo_root / "run.py"
@@ -70,5 +108,24 @@ def test_run_py_is_portable_from_arbitrary_cwd(tmp_path):
 
     assert result.returncode == 1
     assert "Configuration error:" in result.stderr
+    assert "ModuleNotFoundError" not in result.stderr
+    assert "ImportError" not in result.stderr
+
+
+def test_importcheck_is_portable_from_arbitrary_cwd(tmp_path):
+    repo_root = Path(__file__).resolve().parents[2]
+    run_path = repo_root / "run.py"
+
+    result = subprocess.run(
+        [sys.executable, str(run_path), "importcheck"],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert "OK photo_import.__main__" in result.stdout
+    assert "OK scriptlib.sync" in result.stdout
     assert "ModuleNotFoundError" not in result.stderr
     assert "ImportError" not in result.stderr

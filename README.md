@@ -81,6 +81,7 @@ Shell scripts are acceptable when the task is truly simple, but Python is the de
 Operational entrypoint:
 - Use `python3 /path/to/repo/run.py <script_name>` from cron or other schedulers.
 - Current script names: `photo_import`
+- Validate import portability with `python3 /path/to/repo/run.py importcheck`
 
 ### System Dependencies
 
