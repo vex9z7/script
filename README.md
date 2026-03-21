@@ -18,26 +18,18 @@ Each script or shared utility must live in its own top-level directory. This is 
 .
 ├── README.md
 ├── LICENSE
-├── fingerprint/              # Shared utility
+├── scriptlib/               # Shared utility namespace
 │   ├── __init__.py
-│   └── tests/
-├── lock/                    # Shared utility
-│   ├── README.md
-│   ├── __init__.py
-│   ├── file_lock.py
-│   └── tests/
-├── dotenv/                  # Shared utility
-│   ├── __init__.py
-│   └── tests/
-├── log/                     # Shared utility
-│   ├── __init__.py
-│   └── tests/
-├── sync/                    # Shared utility
-│   ├── __init__.py
-│   └── tests/
-└── <script-name>/
-    ├── README.md
-    ├── main.py
+│   ├── dotenv/
+│   ├── fingerprint/
+│   ├── flockplus/
+│   ├── fnmatchplus/
+│   ├── log/
+│   └── sync/
+└── <script_name>/
+    ├── __init__.py
+    ├── __main__.py
+    ├── app.py
     └── ...
 ```
 
@@ -46,7 +38,7 @@ Each script or shared utility must live in its own top-level directory. This is 
 Shared utilities are reusable modules that live in the root directory. They follow a consistent structure:
 
 ```text
-<utility-name>/
+scriptlib/<utility-name>/
 ├── README.md                  # Purpose, usage, and API documentation
 ├── __init__.py               # Public API exports
 ├── <module>.py               # Implementation (optional)
@@ -56,17 +48,18 @@ Shared utilities are reusable modules that live in the root directory. They foll
 ```
 
 Existing utilities:
-- `fingerprint`: File fingerprint comparison using file metadata and lazy content checks.
-- `lock`: Process lock for preventing concurrent script runs.
-- `dotenv`: Environment variable loader from `.env` files.
-- `log`: Configurable logger with file output support.
-- `sync`: File synchronization using fingerprint comparison.
+- `scriptlib.fingerprint`: File fingerprint comparison using file metadata and lazy content checks.
+- `scriptlib.flockplus`: Process lock for preventing concurrent script runs.
+- `scriptlib.dotenv`: Environment variable loader from `.env` files.
+- `scriptlib.log`: Configurable logger with file output support.
+- `scriptlib.sync`: File synchronization using fingerprint comparison.
 
 ## Script Conventions
 
-Each script directory should follow these rules:
+Each script package should follow these rules:
 
-- `main.py`: entry point only; it should orchestrate the workflow, not hold all business logic. Must include `#!/usr/bin/env python3` shebang.
+- `__main__.py`: package entry point for internal execution and dispatch.
+- `app.py`: orchestration entry point only; it should coordinate the workflow, not hold all business logic.
 - `config.py`: all user-editable settings in one place. Support environment variables for configuration.
 - `README.md`: purpose, configuration, execution model, and operational notes.
 - Package modules: implementation split by responsibility.
@@ -83,7 +76,12 @@ Shell scripts are acceptable when the task is truly simple, but Python is the de
 
 ## Scripts
 
-- `photo-import`: Imports photos and videos from a camera SD card on the NAS. See [photo-import/README.md](/home/dev/git/script/photo-import/README.md).
+- `photo_import`: Imports photos and videos from a camera SD card on the NAS. See `photo_import/README.md`.
+
+Operational entrypoint:
+- Use `python3 /path/to/repo/run.py <script_name>` from cron or other schedulers.
+- Current script names: `photo_import`
+- Validate import portability with `python3 /path/to/repo/run.py importcheck`
 
 ### System Dependencies
 

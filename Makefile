@@ -5,10 +5,10 @@ PYTEST ?= .venv/bin/pytest
 .PHONY: lint test check
 
 lint:
-	$(PYLINT) $$(git ls-files '*.py')
+	$(PYLINT) $$(rg --files -g '*.py' -g '!.venv/**')
 
 test:
 	$(PYTEST) -q
 
 check:
-	$(PYTHON) -m compileall photo-import
+	$(PYTHON) -m compileall photo_import scriptlib
