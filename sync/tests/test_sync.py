@@ -94,7 +94,13 @@ class TestSync:
         same_mtime = 1000.0
 
         def mock_get_fingerprint(path):
-            return Fingerprint(size=4, mtime=same_mtime, get_sha256=lambda: "abc123")
+            return Fingerprint(
+                is_file=True,
+                mtime=same_mtime,
+                size=4,
+                extension=".txt",
+                get_sha256=lambda: "abc123",
+            )
 
         with patch("sync.get_fingerprint", side_effect=mock_get_fingerprint):
             stats = sync(source, dest)
