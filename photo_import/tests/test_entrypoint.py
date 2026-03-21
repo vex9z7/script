@@ -169,6 +169,6 @@ def test_importcheck_is_portable_from_arbitrary_cwd(tmp_path):
 
     assert result.returncode == 0
     assert "OK photo_import.__main__" in result.stdout
-    assert "OK scriptlib.sync" in result.stdout
+    assert "OK scriptlib.pyrsync" in result.stdout
     assert "ModuleNotFoundError" not in result.stderr
     assert "ImportError" not in result.stderr

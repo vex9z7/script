@@ -7,8 +7,9 @@
 The workflow should be safe, dependency-free, and unattended:
 
 1. Detect a suitable SD card.
-2. Mount the card as read-only.
-3. Copy supported media files to a configured destination.
+2. Derive a stable device id from block-device metadata.
+3. Mount the card under a managed mount root unless it is already mounted.
+4. Copy supported media files into a per-device import destination.
 4. Exclude thumbnails and preview artifacts.
 5. Unmount the card even when failures occur.
 
@@ -44,8 +45,7 @@ Uses shared modules from `scriptlib`:
 - `scriptlib.flockplus`: Process locking via `FileLock`
 - `scriptlib.log`: Logging via `build_logger`
 - `scriptlib.dotenv`: Environment variable loading via `load_dotenv`
-- `scriptlib.sync`: File synchronization via `sync`
-- `scriptlib.fingerprint`: File comparison via `get_fingerprint`
+- `scriptlib.pyrsync`: Media sync via system `rsync`
 
 The unit tests for this script live under `photo_import/tests/`.
 
@@ -73,10 +73,10 @@ The unit tests for this script live under `photo_import/tests/`.
 - Unmount reliably during cleanup.
 
 `photo_sync.py`
-- Walk the mounted filesystem using `sync`.
+- Walk the mounted filesystem and derive `rsync` filters.
 - Select files by configured extension set.
 - Exclude thumbnails, caches, and preview files.
-- Sync to the destination folder with fingerprint-based comparison.
+- Sync the selected media subset to the destination folder using `rsync`.
 
 `cleanup.py`
 - Centralize final unmount and state cleanup behavior.
@@ -89,8 +89,8 @@ The following items are configurable in `config.py`:
 - `log_file`: Optional path to log file (default: stdout/stderr)
 - `log_level`: Logging threshold such as `INFO` or `DEBUG` (default: `INFO`)
 - `lock_file`: Path to lock file (default: `/tmp/photo-import.lock`)
-- `mount_point`: Mount point for SD card (default: `/mnt/camera-sd-card`)
-- `destination_root`: Destination for imported files
+- `mount_root`: Root directory for derived per-device mount paths (recommended: `/tmp/photo-import/mnt`)
+- `import_root`: Root directory for derived per-device import paths
 - `read_only`: Mount read-only (default: `True`)
 - `allowed_extensions`: Supported file extensions (loaded from `.photoextensions`)
 - `excluded_dir_names`: Directories to skip (loaded from `.photoignore`)
@@ -107,6 +107,9 @@ All paths can be configured via environment variables. See `.env.example`.
 - Logging defaults to stdout/stderr. Set `PHOTO_IMPORT_LOG_FILE` to a file path if you want file logging.
 - Set `PHOTO_IMPORT_LOG_LEVEL=DEBUG` to log why each block device is accepted or rejected during detection.
 - A process lock prevents concurrent runs when scheduled from cron.
+- `rsync` is required on the host system for media sync.
+- The recommended mount root is `/tmp/photo-import/mnt` so script-created mountpoints live on tmpfs instead of under `/mnt`.
+- Empty mount directories created under that root are intentionally left in place; the script does not perform explicit mount-path cleanup.
 
 ## Usage
 
@@ -129,8 +132,10 @@ The script expects root privileges because it mounts and unmounts block devices.
 ## Notes On Current Behavior
 
 - Device discovery is based on `lsblk`.
+- Device ids are derived from ordered metadata parts: model, serial, filesystem type, UUID, and PARTUUID.
 - Candidate partitions are limited to configured filesystem types.
 - The mounted card must contain at least one configured required directory such as `DCIM`.
-- The sync step uses fingerprint comparison (size + mtime) to determine if files match.
+- The sync step uses `rsync` with generated include/exclude rules to mirror the selected media subset.
 - Extra files in destination are deleted to make destination match source.
-- Existing destination files with matching fingerprint are skipped.
+- Existing destination files that are already identical are skipped by `rsync`.
+- If a candidate device is already mounted, its existing mountpoint is reused instead of remounting it.

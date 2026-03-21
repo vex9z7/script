@@ -61,8 +61,8 @@ class Config:
     log_file: Path | None = None
     log_level: int = logging.INFO
     lock_file: Path = Path()
-    mount_point: Path | None = field(default=None)
-    destination_root: Path | None = field(default=None)
+    mount_root: Path | None = field(default=None)
+    import_root: Path | None = field(default=None)
     read_only: bool = True
     supported_filesystems: tuple[str, ...] = ("exfat", "vfat", "fat32")
     required_dir_names: tuple[str, ...] = ("DCIM",)
@@ -82,18 +82,18 @@ class ConfigurationError(ValueError):
 def load_config(env: Mapping[str, str] | None = None) -> Config:
     env_values = os.environ if env is None else env
 
-    mount_point = env_values.get("PHOTO_IMPORT_MOUNT_POINT")
-    destination_root = env_values.get("PHOTO_IMPORT_DESTINATION_ROOT")
+    mount_root = env_values.get("PHOTO_IMPORT_MOUNT_ROOT")
+    import_root = env_values.get("PHOTO_IMPORT_IMPORT_ROOT")
 
-    if not mount_point:
-        raise ConfigurationError("PHOTO_IMPORT_MOUNT_POINT is not set")
-    if not destination_root:
-        raise ConfigurationError("PHOTO_IMPORT_DESTINATION_ROOT is not set")
+    if not mount_root:
+        raise ConfigurationError("PHOTO_IMPORT_MOUNT_ROOT is not set")
+    if not import_root:
+        raise ConfigurationError("PHOTO_IMPORT_IMPORT_ROOT is not set")
 
     return Config(
         log_file=_optional_path(env_values, "PHOTO_IMPORT_LOG_FILE"),
         log_level=_log_level(env_values, "PHOTO_IMPORT_LOG_LEVEL"),
         lock_file=_required_path(env_values, "PHOTO_IMPORT_LOCK_FILE"),
-        mount_point=Path(mount_point),
-        destination_root=Path(destination_root),
+        mount_root=Path(mount_root),
+        import_root=Path(import_root),
     )
