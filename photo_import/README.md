@@ -86,7 +86,7 @@ The unit tests for this script live under `photo_import/tests/`.
 
 The following items are configurable in `config.py`:
 
-- `log_file`: Path to log file (default: `/var/log/photo-import.log`)
+- `log_file`: Optional path to log file (default: stdout/stderr)
 - `lock_file`: Path to lock file (default: `/tmp/photo-import.lock`)
 - `mount_point`: Mount point for SD card (default: `/mnt/camera-sd-card`)
 - `destination_root`: Destination for imported files
@@ -103,7 +103,7 @@ All paths can be configured via environment variables. See `.env.example`.
 - The script is expected to run with enough privileges to mount and unmount devices.
 - Read-only mounting is the default for safety.
 - The import step should preserve source data and must not mutate the SD card.
-- Logging defaults to file output. Set `PHOTO_IMPORT_LOG_FILE` environment variable to configure.
+- Logging defaults to stdout/stderr. Set `PHOTO_IMPORT_LOG_FILE` to a file path if you want file logging.
 - A process lock prevents concurrent runs when scheduled from cron.
 
 ## Usage
