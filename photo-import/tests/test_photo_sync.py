@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import pytest
 from config import Config
 from detect import CandidateDevice
-from photo_sync import sync_media, _matches
+from photo_sync import sync_media
 
 
 @pytest.fixture
@@ -136,29 +136,3 @@ class TestSyncMedia:
         # Assert
         assert stats.synced_files == 0
         assert stats.skipped == 1
-
-
-class TestMatches:
-    def test_should_match_allowed_pattern(self):
-        patterns = [("*.jpg", False), ("*.mp4", False)]
-        matched, excluded = _matches("photo.jpg", patterns)
-        assert matched is True
-        assert excluded is False
-
-    def test_should_match_excluded_pattern(self):
-        patterns = [("*.jpg", False), ("*.THM", True)]
-        matched, excluded = _matches("thumb.THM", patterns)
-        assert matched is True
-        assert excluded is True
-
-    def test_should_not_match_any_pattern(self):
-        patterns = [("*.jpg", False)]
-        matched, excluded = _matches("photo.txt", patterns)
-        assert matched is False
-        assert excluded is False
-
-    def test_should_respect_pattern_order(self):
-        patterns = [("*.jpg", False), ("thumb*", True)]
-        matched, excluded = _matches("thumb_photo.jpg", patterns)
-        assert matched is True
-        assert excluded is True

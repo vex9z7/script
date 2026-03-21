@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import fnmatch
 import json
 import subprocess
 from dataclasses import dataclass
 
 from config import Config
+from fnmatchplus import match_any
 
 
 @dataclass(frozen=True)
@@ -49,21 +49,6 @@ def flatten_blockdevices(devices: list[dict]) -> list[dict]:
     return flattened
 
 
-def _device_matches_patterns(
-    device_path: str, patterns: list[tuple[str, bool]]
-) -> bool:
-    """Check if device matches patterns (gitignore-style, last match wins).
-
-    Returns True if device should be included, False if excluded.
-    If no patterns match, returns False (exclude by default).
-    """
-    matched = False
-    for pattern, excluded in patterns:
-        if fnmatch.fnmatch(device_path, pattern):
-            matched = not excluded
-    return matched
-
-
 def find_candidate_devices(config: Config) -> list[CandidateDevice]:
     data = get_lsblk()
     devices = flatten_blockdevices(data.get("blockdevices", []))
@@ -85,7 +70,7 @@ def find_candidate_devices(config: Config) -> list[CandidateDevice]:
         if not path:
             continue
 
-        if not _device_matches_patterns(path, config.device_patterns):
+        if not match_any(path, config.device_patterns):
             continue
 
         candidates.append(

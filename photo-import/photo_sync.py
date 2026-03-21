@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import fnmatch
 from dataclasses import dataclass
 from pathlib import Path
 
 from config import Config
 from detect import CandidateDevice
+from fnmatchplus import match
 
 from sync import sync
 
@@ -15,22 +15,6 @@ class SyncStats:
     synced_files: int = 0
     skipped: int = 0
     filtered_out: int = 0
-
-
-def _matches(name: str, patterns: list[tuple[str, bool]]) -> tuple[bool, bool]:
-    """Check if name matches patterns (fnmatch-style, last match wins).
-
-    Returns (matches, excluded) tuple.
-    - matches: True if name matches any pattern
-    - excluded: True if the last matching pattern is an exclusion (starts with !)
-    """
-    matched = False
-    excluded = False
-    for pattern, is_excluded in patterns:
-        if fnmatch.fnmatch(name, pattern):
-            matched = True
-            excluded = is_excluded
-    return matched, excluded
 
 
 def sync_media(config: Config, logger, device: CandidateDevice) -> SyncStats:
@@ -48,17 +32,17 @@ def sync_media(config: Config, logger, device: CandidateDevice) -> SyncStats:
 
     def filter(path: Path) -> bool:
         if path.is_dir():
-            matched, excluded = _matches(path.name, config.excluded_patterns)
+            matched, excluded = match(path.name, config.excluded_patterns)
             return not excluded
 
         # Check if any parent directory is excluded
         for parent in path.parents:
-            matched, excluded = _matches(parent.name, config.excluded_patterns)
+            matched, excluded = match(parent.name, config.excluded_patterns)
             if excluded:
                 return False
 
         # Check if filename matches a pattern
-        matched, excluded = _matches(path.name, config.excluded_patterns)
+        matched, excluded = match(path.name, config.excluded_patterns)
 
         if excluded:
             return False

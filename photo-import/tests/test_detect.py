@@ -176,38 +176,6 @@ class TestFindCandidateDevices:
         assert candidates == []
 
 
-class TestDeviceMatchesPatterns:
-    def test_should_return_true_when_pattern_matches(self):
-        from detect import _device_matches_patterns
-
-        patterns = [("/dev/sd*", False), ("/dev/mmcblk*", False)]
-        assert _device_matches_patterns("/dev/sda1", patterns) is True
-        assert _device_matches_patterns("/dev/mmcblk0p1", patterns) is True
-
-    def test_should_return_false_when_excluded_pattern_matches(self):
-        from detect import _device_matches_patterns
-
-        patterns = [("/dev/nvme*", True), ("/dev/sd*", False)]
-        assert _device_matches_patterns("/dev/nvme0n1p1", patterns) is False
-
-    def test_should_return_false_when_no_pattern_matches(self):
-        from detect import _device_matches_patterns
-
-        patterns = [("/dev/sd*", False)]
-        assert _device_matches_patterns("/dev/vda1", patterns) is False
-
-    def test_should_respect_pattern_order(self):
-        from detect import _device_matches_patterns
-
-        patterns = [("/dev/sd*", True), ("/dev/sdb1", False)]
-        assert (
-            _device_matches_patterns("/dev/sdb1", patterns) is True
-        )  # later pattern wins
-        assert (
-            _device_matches_patterns("/dev/sda1", patterns) is False
-        )  # only matches first
-
-
 class TestFindCandidateDevicesWithPatterns:
     def test_should_filter_devices_by_patterns(self, monkeypatch, tmp_path):
         # Arrange
