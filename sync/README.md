@@ -79,13 +79,18 @@ class SyncStats:
 ## Behavior
 
 1. Walk source directory, apply filter if provided
-2. For each source file:
+2. For each source directory:
+    - In non-strict mode, if the directory fingerprint matches → skip the whole subtree
+    - In strict mode, recurse into the directory without trusting its fingerprint
+3. For each source file:
     - If destination doesn't exist → copy
     - If fingerprint matches → skip (non-strict) or verify full file contents (strict)
     - If fingerprint differs → copy
-3. After sync, delete files in destination not present in source
+4. Delete extra destination files only inside directories that were actually traversed
 
 Because `fingerprints_match()` treats `ctime` as significant, a file may be recopied when metadata change time differs between source and destination.
+
+In non-strict mode, matching directory fingerprints are also trusted as a subtree shortcut. When that shortcut is taken, `sync` skips both recursive syncing and recursive deletion inside that directory.
 
 ## Filter Callback
 
@@ -111,6 +116,8 @@ sync(source, dest, filter=my_filter)
 | Strict | Fingerprint matches, content differs | Copy |
 
 In strict mode, directory behavior comes from recursively checking each file in the tree. `sync` does not trust directory fingerprints for strict equality; it walks the directory and applies strict file comparison to each encountered file.
+
+In non-strict mode, a matching directory fingerprint is treated as sufficient to skip the entire subtree. This is a performance-oriented approximation.
 
 ## Testing
 

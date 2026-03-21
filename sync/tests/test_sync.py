@@ -232,3 +232,86 @@ class TestSync:
         assert stats.copied == 1
         assert stats.skipped == 0
         assert (dest_nested / "file.txt").read_text() == "source-content"
+
+    def test_sync_non_strict_skips_matching_directory_subtree(self, tmp_path):
+        from fingerprint import Fingerprint
+
+        source = tmp_path / "source"
+        dest = tmp_path / "dest"
+        source_nested = source / "nested"
+        dest_nested = dest / "nested"
+        source_nested.mkdir(parents=True)
+        dest_nested.mkdir(parents=True)
+        (source_nested / "file.txt").write_text("source-content")
+        (dest_nested / "file.txt").write_text("dest-content")
+        (dest_nested / "extra.txt").write_text("extra")
+
+        def mock_get_fingerprint(path):
+            if path.is_dir() and path.name == "nested":
+                return Fingerprint(
+                    is_file=False,
+                    mtime=1000.0,
+                    ctime=1001.0,
+                    file_count=1,
+                    dir_count=0,
+                )
+            if path.is_dir():
+                return Fingerprint(
+                    is_file=False,
+                    mtime=2000.0 if path.name == "source" else 3000.0,
+                    ctime=1001.0,
+                    file_count=0,
+                    dir_count=1,
+                )
+            raise AssertionError(
+                "non-strict directory shortcut should skip nested files"
+            )
+
+        with patch("sync.get_fingerprint", side_effect=mock_get_fingerprint):
+            stats = sync(source, dest, strict=False)
+
+        assert stats.copied == 0
+        assert stats.skipped == 1
+        assert stats.deleted == 0
+        assert (dest_nested / "file.txt").read_text() == "dest-content"
+        assert (dest_nested / "extra.txt").exists()
+
+    def test_sync_strict_does_not_skip_matching_directory_fingerprint(self, tmp_path):
+        from fingerprint import Fingerprint
+
+        source = tmp_path / "source"
+        dest = tmp_path / "dest"
+        source_nested = source / "nested"
+        dest_nested = dest / "nested"
+        source_nested.mkdir(parents=True)
+        dest_nested.mkdir(parents=True)
+        (source_nested / "file.txt").write_text("source-content")
+        (dest_nested / "file.txt").write_text("dest-content")
+        (dest_nested / "extra.txt").write_text("extra")
+
+        def mock_get_fingerprint(path):
+            if path.is_dir():
+                return Fingerprint(
+                    is_file=False,
+                    mtime=1000.0,
+                    ctime=1001.0,
+                    file_count=1,
+                    dir_count=0,
+                )
+            return Fingerprint(
+                is_file=True,
+                mtime=1000.0,
+                ctime=1001.0,
+                size=12,
+                extension=".txt",
+                get_sha256=lambda: "shared-hash",
+            )
+
+        with patch("sync.get_fingerprint", side_effect=mock_get_fingerprint):
+            stats = sync(source, dest, strict=True)
+
+        assert stats.copied == 1
+        assert stats.skipped == 0
+        assert stats.deleted == 1
+        assert (dest_nested / "file.txt").read_text() == "source-content"
+        assert not (dest_nested / "extra.txt").exists()

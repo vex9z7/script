@@ -84,6 +84,10 @@ Compare two fingerprints:
 - When the expected result depends on exact fingerprint fields, construct `Fingerprint` instances directly or mock fingerprint creation.
 - Integration tests may still use real files, but should not assume `ctime` stability across platforms.
 
+## TODO
+
+- Directory fingerprints are currently shallow metadata-based approximations. They may miss cases where child file contents change without a corresponding directory-level metadata change.
+
 ## Testing
 
 ```bash
