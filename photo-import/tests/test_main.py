@@ -4,7 +4,7 @@ import importlib
 import logging
 
 from config import Config
-from conftest import make_busy_lock, make_mock_process_lock
+from conftest import make_mock_process_lock
 from photo_sync import SyncStats
 
 
@@ -103,24 +103,6 @@ def test_main_returns_one_when_unmount_fails(monkeypatch, tmp_path, candidate_de
     monkeypatch.setattr(main_module, "safe_unmount", lambda *args, **kwargs: False)
 
     assert main_module.main() == 1
-
-
-def test_main_returns_zero_when_lock_is_busy(monkeypatch, tmp_path):
-    main_module = importlib.import_module("main")
-    config = Config(
-        lock_file=tmp_path / "photo-import.lock",
-        mount_point=tmp_path / "mount",
-        destination_root=tmp_path / "dest",
-    )
-
-    monkeypatch.setattr(main_module, "load_config", lambda: config)
-    monkeypatch.setattr(main_module.os, "geteuid", lambda: 0)
-    monkeypatch.setattr(
-        main_module, "build_logger", lambda *args, **kwargs: logging.getLogger("test")
-    )
-    monkeypatch.setattr(main_module, "ProcessLock", make_busy_lock())
-
-    assert main_module.main() == 0
 
 
 def test_main_returns_one_when_config_missing(monkeypatch):

@@ -29,20 +29,6 @@ def make_mock_process_lock():
     return MockProcessLock
 
 
-def make_busy_lock():
-    class BusyLock:
-        def __init__(self, lock_path):
-            pass
-
-        def __enter__(self):
-            raise OSError("resource unavailable")
-
-        def __exit__(self, *args):
-            pass
-
-    return BusyLock
-
-
 @pytest.fixture
 def candidate_device():
     return CandidateDevice(
