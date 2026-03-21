@@ -22,6 +22,7 @@ class TestFingerprint:
         test_file.write_text("hello")
         fp = get_fingerprint(test_file)
 
+        assert fp.get_sha256 is not None
         sha1 = fp.get_sha256()
         sha2 = fp.get_sha256()
         assert sha1 == sha2
@@ -136,6 +137,7 @@ class TestFingerprintPerformance:
 
         call_count = [0]
         original_get_sha256 = fp1.get_sha256
+        assert original_get_sha256 is not None
 
         def counting_get_sha256():
             call_count[0] += 1
@@ -194,6 +196,7 @@ class TestFingerprintPerformance:
 
         sha_called = [False]
         original_get_sha256 = fp1.get_sha256
+        assert original_get_sha256 is not None
 
         def counting_get_sha256():
             sha_called[0] = True
@@ -201,12 +204,21 @@ class TestFingerprintPerformance:
 
         fp1 = Fingerprint(
             is_file=True,
-            mtime=fp1.mtime,
-            ctime=fp1.ctime,
+            mtime=1000.0,
+            ctime=1001.0,
             size=fp1.size,
             extension=fp1.extension,
             get_chunk=fp1.get_chunk,
             get_sha256=counting_get_sha256,
+        )
+        fp2 = Fingerprint(
+            is_file=True,
+            mtime=1000.0,
+            ctime=1001.0,
+            size=fp2.size,
+            extension=fp2.extension,
+            get_chunk=fp2.get_chunk,
+            get_sha256=fp2.get_sha256,
         )
 
         fingerprints_match(fp1, fp2)
@@ -224,6 +236,7 @@ class TestFingerprintPerformance:
 
         call_count = [0]
         original_get_chunk = fp1.get_chunk
+        assert original_get_chunk is not None
 
         def counting_get_chunk():
             call_count[0] += 1

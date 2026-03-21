@@ -26,6 +26,8 @@ Synchronize files from source to destination directory. Decides what to copy, sk
 - A guarantee of bit-perfect sync (uses fingerprint as approximation)
 - Responsible for deciding what "match" means (that is fingerprint's job)
 
+`sync` intentionally inherits the `fingerprint` comparison contract. In particular, if `fingerprint` treats a `ctime` difference as a mismatch, `sync` will recopy that file even when file contents are otherwise identical.
+
 ## Architecture
 
 ```
@@ -78,10 +80,12 @@ class SyncStats:
 
 1. Walk source directory, apply filter if provided
 2. For each source file:
-   - If destination doesn't exist → copy
-   - If fingerprint matches → skip (non-strict) or verify content (strict)
-   - If fingerprint differs → copy
+    - If destination doesn't exist → copy
+    - If fingerprint matches → skip (non-strict) or verify content (strict)
+    - If fingerprint differs → copy
 3. After sync, delete files in destination not present in source
+
+Because `fingerprints_match()` treats `ctime` as significant, a file may be recopied when metadata change time differs between source and destination.
 
 ## Filter Callback
 

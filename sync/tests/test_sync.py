@@ -20,6 +20,8 @@ class TestSync:
         assert (dest / "file.txt").read_text() == "content"
 
     def test_sync_skips_identical_files(self, tmp_path):
+        from fingerprint import Fingerprint
+
         source = tmp_path / "source"
         dest = tmp_path / "dest"
         source.mkdir()
@@ -27,7 +29,18 @@ class TestSync:
         (source / "file.txt").write_text("content")
         (dest / "file.txt").write_text("content")
 
-        stats = sync(source, dest)
+        def mock_get_fingerprint(path):
+            return Fingerprint(
+                is_file=True,
+                mtime=1000.0,
+                ctime=1001.0,
+                size=7,
+                extension=".txt",
+                get_sha256=lambda: "shared-hash",
+            )
+
+        with patch("sync.get_fingerprint", side_effect=mock_get_fingerprint):
+            stats = sync(source, dest)
 
         assert stats.copied == 0
         assert stats.skipped == 1

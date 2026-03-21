@@ -56,7 +56,7 @@ Shared utilities are reusable modules that live in the root directory. They foll
 ```
 
 Existing utilities:
-- `fingerprint`: File fingerprint comparison using size and mtime.
+- `fingerprint`: File fingerprint comparison using file metadata and lazy content checks.
 - `lock`: Process lock for preventing concurrent script runs.
 - `dotenv`: Environment variable loader from `.env` files.
 - `log`: Configurable logger with file output support.

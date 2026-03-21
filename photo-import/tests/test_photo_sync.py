@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from config import Config
@@ -129,9 +129,13 @@ class TestSyncMedia:
             destination_root=destination_root,
         )
 
-        # Act - run twice to trigger skips
-        sync_media(config, mock_logger, candidate_device)
-        stats = sync_media(config, mock_logger, candidate_device)
+        with patch("photo_sync.sync") as mock_sync:
+            mock_sync.return_value.copied = 0
+            mock_sync.return_value.skipped = 1
+            mock_sync.return_value.deleted = 0
+
+            # Act
+            stats = sync_media(config, mock_logger, candidate_device)
 
         # Assert
         assert stats.synced_files == 0

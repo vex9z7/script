@@ -11,8 +11,8 @@ class Fingerprint:
     ctime: float | None = None
     size: int | None = None
     extension: str | None = None
-    get_chunk: Callable[[], bytes | None] = None
-    get_sha256: Callable[[], str | None] = None
+    get_chunk: Callable[[], bytes | None] | None = None
+    get_sha256: Callable[[], str | None] | None = None
     file_count: int | None = None
     dir_count: int | None = None
 

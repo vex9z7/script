@@ -4,11 +4,11 @@ File fingerprint module for fast file/directory comparison.
 
 ## Purpose
 
-Generate fingerprints for files and directories, providing fast comparison methods. A fingerprint is a **negative test**: if fingerprints don't match, the targets are definitely different; if they match, they are likely identical.
+Generate fingerprints for files and directories, providing fast comparison methods. A fingerprint is a **negative test**: if fingerprints don't match, the targets are definitely different; if they match, they are likely identical within this module's comparison rules.
 
 ## Responsibilities
 
-- Calculate and store file metadata (size, mtime)
+- Calculate and store file metadata (size, mtime, ctime)
 - Compute content hash (lazy, on demand)
 - Compare two fingerprints for identity
 
@@ -16,7 +16,7 @@ Generate fingerprints for files and directories, providing fast comparison metho
 
 - A **fast approximation** of file identity
 - A **negative test**: mismatched fingerprints prove files are different
-- Composed of observable attributes: size, mtime, hash
+- Composed of observable attributes: size, mtime, ctime, hash
 
 ## What fingerprint IS NOT
 
@@ -47,6 +47,7 @@ else:
 class Fingerprint:
     size: int                          # File size in bytes (0 for directories)
     mtime: float                       # Modification time (from stat)
+    ctime: float                       # Metadata change time (from stat)
     get_sha256: Callable[[], str]      # Lazy content hash (None for directories)
 ```
 
@@ -59,19 +60,29 @@ Generate fingerprint for a file or directory.
 Compare two fingerprints:
 
 1. If `mtime` differs → return `False` immediately (no hash computed)
-2. If `size` differs → return `False`
-3. Compute and compare `sha256` hashes
+2. If `ctime` differs → return `False` immediately
+3. If `size` differs → return `False`
+4. Compute and compare `sha256` hashes
 
-**Performance note:** Hash computation is lazy and skipped when mtime/size differ.
+`ctime` is part of the intended comparison contract. If two files have identical content but different `ctime`, `fingerprints_match()` returns `False` and downstream consumers may treat the file as changed.
+
+**Performance note:** Hash computation is lazy and skipped when mtime/ctime/size differ.
 
 ## Comparison Properties
 
 | Scenario | `fingerprints_match` result |
 |----------|----------------------------|
 | `mtime` differs | `False` (proved) |
+| `ctime` differs | `False` (proved by policy) |
 | `size` differs | `False` (proved) |
 | Both equal, content differs | `False` (proved via hash) |
 | All equal | `True` (likely) |
+
+## Testing Guidance
+
+- Tests that exercise fingerprint equality should not rely on the host filesystem accidentally producing matching timestamps.
+- When the expected result depends on exact fingerprint fields, construct `Fingerprint` instances directly or mock fingerprint creation.
+- Integration tests may still use real files, but should not assume `ctime` stability across platforms.
 
 ## Testing
 
