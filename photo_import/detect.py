@@ -45,7 +45,6 @@ def get_lsblk() -> dict:
             "lsblk",
             "-J",
             "-o",
-            "NAME,PATH,FSTYPE,TYPE,MOUNTPOINT,LABEL,RM,SIZE,MODEL,TRAN",
             "NAME,PATH,FSTYPE,TYPE,MOUNTPOINT,LABEL,UUID,PARTUUID,RM,SIZE,MODEL,SERIAL,TRAN",
         ],
         text=True,
