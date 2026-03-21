@@ -1,10 +1,28 @@
 # `fingerprint`
 
-File fingerprint module for fast file comparison.
+File fingerprint module for fast file/directory comparison.
 
 ## Purpose
 
-Generate file fingerprints for quick comparison. Fingerprint is a negative test: if fingerprints don't match, files are definitely different.
+Generate fingerprints for files and directories, providing fast comparison methods. A fingerprint is a **negative test**: if fingerprints don't match, the targets are definitely different; if they match, they are likely identical.
+
+## Responsibilities
+
+- Calculate and store file metadata (size, mtime)
+- Compute content hash (lazy, on demand)
+- Compare two fingerprints for identity
+
+## What fingerprint IS
+
+- A **fast approximation** of file identity
+- A **negative test**: mismatched fingerprints prove files are different
+- Composed of observable attributes: size, mtime, hash
+
+## What fingerprint IS NOT
+
+- A guarantee of identity (use strict mode for verification)
+- A sync mechanism
+- A file operation tool
 
 ## Usage
 
@@ -12,10 +30,12 @@ Generate file fingerprints for quick comparison. Fingerprint is a negative test:
 from fingerprint import get_fingerprint, fingerprints_match
 
 fp = get_fingerprint("/path/to/file")
-# Fingerprint(size=1234, mtime=1234567890.0, hash=None)
 
+# Compare two fingerprints
 if fingerprints_match(fp1, fp2):
-    print("Files likely identical")
+    print("Fingerprints match - files likely identical")
+else:
+    print("Fingerprints differ - files are definitely different")
 ```
 
 ## API Reference
@@ -25,35 +45,33 @@ if fingerprints_match(fp1, fp2):
 ```python
 @dataclass
 class Fingerprint:
-    size: int       # File size in bytes
-    mtime: float    # Modification time
-    hash: str | None  # Content hash (optional, future)
+    size: int                          # File size in bytes (0 for directories)
+    mtime: float                       # Modification time (from stat)
+    get_sha256: Callable[[], str]      # Lazy content hash (None for directories)
 ```
 
-### `get_fingerprint(path, include_hash=False)`
+### `get_fingerprint(path: Path) -> Fingerprint`
 
-Get fingerprint for a file.
+Generate fingerprint for a file or directory.
 
-**Parameters:**
-- `path` (Path): Path to file
-- `include_hash` (bool): Include content hash in fingerprint
+### `fingerprints_match(a: Fingerprint, b: Fingerprint) -> bool`
 
-### `fingerprints_match(a, b)`
+Compare two fingerprints:
 
-Compare two fingerprints.
+1. If `mtime` differs → return `False` immediately (no hash computed)
+2. If `size` differs → return `False`
+3. Compute and compare `sha256` hashes
 
-**Returns:** `True` if fingerprints match (files likely identical)
+**Performance note:** Hash computation is lazy and skipped when mtime/size differ.
 
-## Fingerprint vs Content Hash
+## Comparison Properties
 
-| Method | Speed | Accuracy |
-|--------|-------|----------|
-| Fingerprint (size + mtime) | Fast | High (false positives rare) |
-| Content hash (SHA256) | Slow | 100% accurate |
-
-Fingerprint is a negative test:
-- **Don't match** → Files are definitely different
-- **Match** → Files are likely the same (use strict mode for verification)
+| Scenario | `fingerprints_match` result |
+|----------|----------------------------|
+| `mtime` differs | `False` (proved) |
+| `size` differs | `False` (proved) |
+| Both equal, content differs | `False` (proved via hash) |
+| All equal | `True` (likely) |
 
 ## Testing
 
