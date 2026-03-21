@@ -3,7 +3,7 @@ from __future__ import annotations
 from unittest.mock import patch, MagicMock
 
 from photo_import.config import Config
-from photo_import.detect import find_candidate_devices, get_lsblk
+from photo_import.detect import _device_id, find_candidate_devices, get_lsblk
 
 
 class TestGetLsblk:
@@ -24,8 +24,8 @@ class TestFindCandidateDevices:
     def test_should_filter_and_sort_removable_devices(self, monkeypatch, tmp_path):
         # Arrange
         config = Config(
-            mount_point=tmp_path / "mount",
-            destination_root=tmp_path / "dest",
+            mount_root=tmp_path / "mount-root",
+            import_root=tmp_path / "import-root",
         )
         lsblk_data = {
             "blockdevices": [
@@ -93,15 +93,22 @@ class TestFindCandidateDevices:
         candidates = find_candidate_devices(config)
 
         # Assert
-        assert [device.path for device in candidates] == ["/dev/mmcblk0p1", "/dev/sda1"]
+        assert [device.path for device in candidates] == [
+            "/dev/mmcblk0p1",
+            "/dev/sda1",
+            "/dev/sdb1",
+        ]
         assert candidates[0].label == "CARD"
         assert candidates[1].label == "CAMERA"
+        assert candidates[0].device_id == "vfat"
+        assert candidates[1].device_id == "reader-exfat"
+        assert candidates[2].mountpoint == "/media/already-mounted"
 
     def test_should_respect_supported_filesystems(self, monkeypatch, tmp_path):
         # Arrange
         config = Config(
-            mount_point=tmp_path / "mount",
-            destination_root=tmp_path / "dest",
+            mount_root=tmp_path / "mount-root",
+            import_root=tmp_path / "import-root",
             supported_filesystems=("exfat",),
         )
         monkeypatch.setattr(
@@ -134,8 +141,8 @@ class TestFindCandidateDevices:
         self, monkeypatch, tmp_path
     ):
         config = Config(
-            mount_point=tmp_path / "mount",
-            destination_root=tmp_path / "dest",
+            mount_root=tmp_path / "mount-root",
+            import_root=tmp_path / "import-root",
         )
         logger = MagicMock()
         lsblk_data = {
@@ -178,8 +185,8 @@ class TestFindCandidateDevices:
         self, monkeypatch, tmp_path
     ):
         config = Config(
-            mount_point=tmp_path / "mount",
-            destination_root=tmp_path / "dest",
+            mount_root=tmp_path / "mount-root",
+            import_root=tmp_path / "import-root",
         )
         logger = MagicMock()
         lsblk_data = {
@@ -207,15 +214,15 @@ class TestFindCandidateDevices:
         logger.debug.assert_called_with(
             "device %s %s",
             "/dev/mmcblk0p1",
-            "accepted: fstype=vfat, label=CARD, rm=1, tran=mmc",
+            "accepted: fstype=vfat, label=CARD, rm=1, tran=mmc, mountpoint=<none>",
         )
 
     def test_should_accept_partition_when_parent_transport_is_usb(
         self, monkeypatch, tmp_path
     ):
         config = Config(
-            mount_point=tmp_path / "mount",
-            destination_root=tmp_path / "dest",
+            mount_root=tmp_path / "mount-root",
+            import_root=tmp_path / "import-root",
         )
         lsblk_data = {
             "blockdevices": [
@@ -248,13 +255,14 @@ class TestFindCandidateDevices:
         candidates = find_candidate_devices(config)
 
         assert [device.path for device in candidates] == ["/dev/sde1"]
+        assert candidates[0].device_id == "exfat"
 
     def test_should_reject_partition_when_parent_transport_is_unsupported(
         self, monkeypatch, tmp_path
     ):
         config = Config(
-            mount_point=tmp_path / "mount",
-            destination_root=tmp_path / "dest",
+            mount_root=tmp_path / "mount-root",
+            import_root=tmp_path / "import-root",
         )
         lsblk_data = {
             "blockdevices": [
@@ -288,13 +296,58 @@ class TestFindCandidateDevices:
 
         assert not candidates
 
+    def test_should_include_existing_mountpoint_and_device_id(
+        self, monkeypatch, tmp_path
+    ):
+        config = Config(
+            mount_root=tmp_path / "mount-root",
+            import_root=tmp_path / "import-root",
+        )
+        lsblk_data = {
+            "blockdevices": [
+                {
+                    "name": "sde",
+                    "path": "/dev/sde",
+                    "type": "disk",
+                    "rm": 1,
+                    "tran": "usb",
+                    "model": "USB Reader",
+                    "serial": "ABC 123",
+                    "children": [
+                        {
+                            "name": "sde1",
+                            "path": "/dev/sde1",
+                            "type": "part",
+                            "fstype": "exfat",
+                            "uuid": "FA86-7EB0",
+                            "partuuid": "part-001",
+                            "mountpoint": "/mnt/camera-sd-card",
+                            "label": "SD_Card",
+                            "rm": 1,
+                            "size": "64G",
+                            "model": None,
+                            "serial": None,
+                            "tran": None,
+                        }
+                    ],
+                }
+            ]
+        }
+
+        monkeypatch.setattr("photo_import.detect.get_lsblk", lambda: lsblk_data)
+
+        candidates = find_candidate_devices(config)
+
+        assert [device.mountpoint for device in candidates] == ["/mnt/camera-sd-card"]
+        assert candidates[0].device_id == "usb_reader-abc_123-exfat-fa86-7eb0-part-001"
+
 
 class TestFindCandidateDevicesWithPatterns:
     def test_should_filter_devices_by_patterns(self, monkeypatch, tmp_path):
         # Arrange
         config = Config(
-            mount_point=tmp_path / "mount",
-            destination_root=tmp_path / "dest",
+            mount_root=tmp_path / "mount-root",
+            import_root=tmp_path / "import-root",
             device_patterns=[("/dev/sd*", False), ("/dev/mmcblk*", False)],
         )
         lsblk_data = {
@@ -344,8 +397,8 @@ class TestFindCandidateDevicesWithPatterns:
     def test_should_exclude_specific_device_with_negation(self, monkeypatch, tmp_path):
         # Arrange
         config = Config(
-            mount_point=tmp_path / "mount",
-            destination_root=tmp_path / "dest",
+            mount_root=tmp_path / "mount-root",
+            import_root=tmp_path / "import-root",
             device_patterns=[
                 ("/dev/sd*", False),
                 ("/dev/sdb1", True),
@@ -400,3 +453,32 @@ class TestFindCandidateDevicesWithPatterns:
 
         # Assert - only sda1 should be included, sdb1 excluded
         assert [device.path for device in candidates] == ["/dev/sda1"]
+
+
+class TestDeviceId:
+    def test_should_build_device_id_from_available_fields(self):
+        device = {
+            "path": "/dev/sde1",
+            "fstype": "exfat",
+            "uuid": "FA86-7EB0",
+            "partuuid": "part-001",
+            "model": None,
+            "serial": None,
+        }
+        parent = {"model": "USB Reader", "serial": "ABC 123"}
+
+        assert (
+            _device_id(device, parent) == "usb_reader-abc_123-exfat-fa86-7eb0-part-001"
+        )
+
+    def test_should_fall_back_to_path_name_when_no_parts_available(self):
+        device = {
+            "path": "/dev/sde1",
+            "fstype": None,
+            "uuid": None,
+            "partuuid": None,
+            "model": None,
+            "serial": None,
+        }
+
+        assert _device_id(device, None) == "sde1"

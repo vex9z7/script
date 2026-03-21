@@ -68,37 +68,37 @@ class TestConfigDefaults:
         assert config.log_file is None
         assert config.log_level == logging.INFO
         assert config.lock_file == Path()
-        assert config.mount_point is None
-        assert config.destination_root is None
+        assert config.mount_root is None
+        assert config.import_root is None
 
 
 class TestLoadConfig:
-    def test_load_config_raises_when_mount_point_missing(self, monkeypatch):
+    def test_load_config_raises_when_mount_root_missing(self, monkeypatch):
         env = {
             "PHOTO_IMPORT_LOCK_FILE": "/tmp/photo-import.lock",
-            "PHOTO_IMPORT_DESTINATION_ROOT": "/dest",
+            "PHOTO_IMPORT_IMPORT_ROOT": "/dest",
         }
 
         with pytest.raises(
-            config_module.ConfigurationError, match="PHOTO_IMPORT_MOUNT_POINT"
+            config_module.ConfigurationError, match="PHOTO_IMPORT_MOUNT_ROOT"
         ):
             config_module.load_config(env)
 
-    def test_load_config_raises_when_destination_root_missing(self, monkeypatch):
+    def test_load_config_raises_when_import_root_missing(self, monkeypatch):
         env = {
             "PHOTO_IMPORT_LOCK_FILE": "/tmp/photo-import.lock",
-            "PHOTO_IMPORT_MOUNT_POINT": "/src",
+            "PHOTO_IMPORT_MOUNT_ROOT": "/mount-root",
         }
 
         with pytest.raises(
-            config_module.ConfigurationError, match="PHOTO_IMPORT_DESTINATION_ROOT"
+            config_module.ConfigurationError, match="PHOTO_IMPORT_IMPORT_ROOT"
         ):
             config_module.load_config(env)
 
-    def test_load_config_returns_config_when_both_set(self):
+    def test_load_config_returns_config_when_roots_set(self):
         env = {
-            "PHOTO_IMPORT_MOUNT_POINT": "/src",
-            "PHOTO_IMPORT_DESTINATION_ROOT": "/dest",
+            "PHOTO_IMPORT_MOUNT_ROOT": "/mount-root",
+            "PHOTO_IMPORT_IMPORT_ROOT": "/import-root",
             "PHOTO_IMPORT_LOG_FILE": "/var/log/photo-import.log",
             "PHOTO_IMPORT_LOG_LEVEL": "DEBUG",
             "PHOTO_IMPORT_LOCK_FILE": "/custom/lock",
@@ -109,13 +109,13 @@ class TestLoadConfig:
         assert config.log_file == Path("/var/log/photo-import.log")
         assert config.log_level == logging.DEBUG
         assert config.lock_file == Path("/custom/lock")
-        assert config.mount_point == Path("/src")
-        assert config.destination_root == Path("/dest")
+        assert config.mount_root == Path("/mount-root")
+        assert config.import_root == Path("/import-root")
 
     def test_load_config_treats_empty_log_path_as_unset(self):
         env = {
-            "PHOTO_IMPORT_MOUNT_POINT": "/src",
-            "PHOTO_IMPORT_DESTINATION_ROOT": "/dest",
+            "PHOTO_IMPORT_MOUNT_ROOT": "/mount-root",
+            "PHOTO_IMPORT_IMPORT_ROOT": "/import-root",
             "PHOTO_IMPORT_LOG_FILE": "",
             "PHOTO_IMPORT_LOCK_FILE": "/tmp/photo-import.lock",
         }
@@ -127,8 +127,8 @@ class TestLoadConfig:
 
     def test_load_config_raises_when_lock_file_missing(self):
         env = {
-            "PHOTO_IMPORT_MOUNT_POINT": "/src",
-            "PHOTO_IMPORT_DESTINATION_ROOT": "/dest",
+            "PHOTO_IMPORT_MOUNT_ROOT": "/mount-root",
+            "PHOTO_IMPORT_IMPORT_ROOT": "/import-root",
         }
 
         with pytest.raises(
@@ -137,20 +137,20 @@ class TestLoadConfig:
             config_module.load_config(env)
 
     def test_load_config_defaults_to_os_environ(self, monkeypatch):
-        monkeypatch.setenv("PHOTO_IMPORT_MOUNT_POINT", "/src")
-        monkeypatch.setenv("PHOTO_IMPORT_DESTINATION_ROOT", "/dest")
+        monkeypatch.setenv("PHOTO_IMPORT_MOUNT_ROOT", "/mount-root")
+        monkeypatch.setenv("PHOTO_IMPORT_IMPORT_ROOT", "/import-root")
         monkeypatch.setenv("PHOTO_IMPORT_LOCK_FILE", "/tmp/photo-import.lock")
 
         config = config_module.load_config()
 
-        assert config.mount_point == Path("/src")
-        assert config.destination_root == Path("/dest")
+        assert config.mount_root == Path("/mount-root")
+        assert config.import_root == Path("/import-root")
         assert config.lock_file == Path("/tmp/photo-import.lock")
 
     def test_load_config_raises_when_log_level_invalid(self):
         env = {
-            "PHOTO_IMPORT_MOUNT_POINT": "/src",
-            "PHOTO_IMPORT_DESTINATION_ROOT": "/dest",
+            "PHOTO_IMPORT_MOUNT_ROOT": "/mount-root",
+            "PHOTO_IMPORT_IMPORT_ROOT": "/import-root",
             "PHOTO_IMPORT_LOCK_FILE": "/tmp/photo-import.lock",
             "PHOTO_IMPORT_LOG_LEVEL": "verbose",
         }

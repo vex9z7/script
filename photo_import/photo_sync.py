@@ -72,13 +72,13 @@ def _rsync_filters(patterns: list[tuple[str, bool]]) -> list[str]:
     return rules
 
 
-def sync_media(config: Config, logger, device: CandidateDevice) -> SyncStats:
-    assert config.mount_point is not None
-    assert config.destination_root is not None
-
-    mount_point = config.mount_point
-    destination_root = config.destination_root
-
+def sync_media(
+    config: Config,
+    logger,
+    device: CandidateDevice,
+    mount_point: Path,
+    destination_root: Path,
+) -> SyncStats:
     destination_root.mkdir(parents=True, exist_ok=True)
 
     logger.debug(

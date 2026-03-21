@@ -9,15 +9,15 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 from photo_import.config import Config
-from photo_import.tests.conftest import make_mock_process_lock
 from photo_import.photo_sync import SyncStats
+from photo_import.tests.conftest import make_mock_process_lock
 
 
 def test_main_returns_zero_when_no_candidate_devices(monkeypatch, tmp_path):
     main_module = importlib.import_module("photo_import.app")
     config = Config(
-        mount_point=tmp_path / "mount",
-        destination_root=tmp_path / "dest",
+        mount_root=tmp_path / "mount-root",
+        import_root=tmp_path / "import-root",
     )
 
     monkeypatch.setattr(main_module, "load_config", lambda: config)
@@ -26,7 +26,6 @@ def test_main_returns_zero_when_no_candidate_devices(monkeypatch, tmp_path):
         main_module, "build_logger", lambda *args, **kwargs: logging.getLogger("test")
     )
     monkeypatch.setattr(main_module, "FileLock", make_mock_process_lock())
-    monkeypatch.setattr(main_module, "is_mountpoint", lambda _: False)
     monkeypatch.setattr(
         main_module, "find_candidate_devices", lambda _, logger=None: []
     )
@@ -37,8 +36,8 @@ def test_main_returns_zero_when_no_candidate_devices(monkeypatch, tmp_path):
 def test_main_runs_successful_import_flow(monkeypatch, tmp_path, candidate_device):
     main_module = importlib.import_module("photo_import.app")
     config = Config(
-        mount_point=tmp_path / "mount",
-        destination_root=tmp_path / "dest",
+        mount_root=tmp_path / "mount-root",
+        import_root=tmp_path / "import-root",
     )
     calls = []
     logger = MagicMock()
@@ -47,7 +46,6 @@ def test_main_runs_successful_import_flow(monkeypatch, tmp_path, candidate_devic
     monkeypatch.setattr(main_module.os, "geteuid", lambda: 0)
     monkeypatch.setattr(main_module, "build_logger", lambda *args, **kwargs: logger)
     monkeypatch.setattr(main_module, "FileLock", make_mock_process_lock())
-    monkeypatch.setattr(main_module, "is_mountpoint", lambda _: False)
     monkeypatch.setattr(
         main_module,
         "find_candidate_devices",
@@ -63,42 +61,41 @@ def test_main_runs_successful_import_flow(monkeypatch, tmp_path, candidate_devic
     monkeypatch.setattr(
         main_module,
         "sync_media",
-        lambda config_value, logger, device_value: (
-            calls.append(("sync", config_value.destination_root, device_value.path))
+        lambda config_value, logger_value, device_value, mount_path, destination_path: (
+            calls.append(("sync", mount_path, destination_path, device_value.path))
             or SyncStats(synced_files=3, skipped=1, filtered_out=2)
         ),
     )
     monkeypatch.setattr(
         main_module,
         "safe_unmount",
-        lambda mount_point, logger: calls.append(("unmount", mount_point)) or True,
+        lambda mount_point, logger_value: calls.append(("unmount", mount_point))
+        or True,
     )
 
     assert main_module.main() == 0
-    assert calls[0] == (
-        "mount",
-        candidate_device.path,
-        config.mount_point,
-        config.read_only,
-    )
-    assert calls[1] == ("sync", config.destination_root, candidate_device.path)
-    assert calls[2] == ("unmount", config.mount_point)
+    derived_mount = config.mount_root / candidate_device.device_id
+    derived_import = config.import_root / candidate_device.device_id
+    assert calls[0] == ("mount", candidate_device.path, derived_mount, config.read_only)
+    assert calls[1] == ("sync", derived_mount, derived_import, candidate_device.path)
+    assert calls[2] == ("unmount", derived_mount)
     logger.info.assert_any_call(
         "mounting device %s at %s (read_only=%s)",
         candidate_device.path,
-        config.mount_point,
+        derived_mount,
         config.read_only,
     )
+    logger.info.assert_any_call("syncing %s to %s", derived_mount, derived_import)
     logger.debug.assert_any_call(
-        "mounted device %s at %s", candidate_device.path, config.mount_point
+        "mounted device %s at %s", candidate_device.path, derived_mount
     )
 
 
 def test_main_returns_one_when_unmount_fails(monkeypatch, tmp_path, candidate_device):
     main_module = importlib.import_module("photo_import.app")
     config = Config(
-        mount_point=tmp_path / "mount",
-        destination_root=tmp_path / "dest",
+        mount_root=tmp_path / "mount-root",
+        import_root=tmp_path / "import-root",
     )
 
     monkeypatch.setattr(main_module, "load_config", lambda: config)
@@ -107,7 +104,6 @@ def test_main_returns_one_when_unmount_fails(monkeypatch, tmp_path, candidate_de
         main_module, "build_logger", lambda *args, **kwargs: logging.getLogger("test")
     )
     monkeypatch.setattr(main_module, "FileLock", make_mock_process_lock())
-    monkeypatch.setattr(main_module, "is_mountpoint", lambda _: False)
     monkeypatch.setattr(
         main_module,
         "find_candidate_devices",
@@ -127,8 +123,8 @@ def test_main_returns_one_when_unmount_fails(monkeypatch, tmp_path, candidate_de
 def test_main_returns_one_when_config_missing(monkeypatch):
     main_module = importlib.import_module("photo_import.app")
 
-    monkeypatch.delenv("PHOTO_IMPORT_MOUNT_POINT", raising=False)
-    monkeypatch.delenv("PHOTO_IMPORT_DESTINATION_ROOT", raising=False)
+    monkeypatch.delenv("PHOTO_IMPORT_MOUNT_ROOT", raising=False)
+    monkeypatch.delenv("PHOTO_IMPORT_IMPORT_ROOT", raising=False)
 
     assert main_module.main() == 1
 
@@ -137,8 +133,8 @@ def test_main_package_runs_without_install(monkeypatch):
     repo_root = Path(__file__).resolve().parents[2]
     env = dict(os.environ)
 
-    env.pop("PHOTO_IMPORT_MOUNT_POINT", None)
-    env.pop("PHOTO_IMPORT_DESTINATION_ROOT", None)
+    env.pop("PHOTO_IMPORT_MOUNT_ROOT", None)
+    env.pop("PHOTO_IMPORT_IMPORT_ROOT", None)
 
     result = subprocess.run(
         [sys.executable, "-m", "photo_import"],
@@ -157,12 +153,12 @@ def test_main_package_runs_without_install(monkeypatch):
 def test_main_returns_one_when_not_root(monkeypatch, tmp_path):
     main_module = importlib.import_module("photo_import.app")
     config = Config(
-        mount_point=tmp_path / "mount",
-        destination_root=tmp_path / "dest",
+        mount_root=tmp_path / "mount-root",
+        import_root=tmp_path / "import-root",
     )
 
     monkeypatch.setattr(main_module, "load_config", lambda: config)
-    monkeypatch.setattr(main_module.os, "geteuid", lambda: 1)  # non-zero = not root
+    monkeypatch.setattr(main_module.os, "geteuid", lambda: 1)
     monkeypatch.setattr(
         main_module, "build_logger", lambda *args, **kwargs: logging.getLogger("test")
     )
@@ -170,30 +166,43 @@ def test_main_returns_one_when_not_root(monkeypatch, tmp_path):
     assert main_module.main() == 1
 
 
-def test_main_returns_one_when_mount_point_already_active(monkeypatch, tmp_path):
+def test_main_reuses_existing_device_mountpoint(
+    monkeypatch, tmp_path, candidate_device
+):
     main_module = importlib.import_module("photo_import.app")
+    mounted_candidate = candidate_device.__class__(
+        **{**candidate_device.__dict__, "mountpoint": "/mnt/camera-sd-card"}
+    )
     config = Config(
-        mount_point=tmp_path / "mount",
-        destination_root=tmp_path / "dest",
+        mount_root=tmp_path / "mount-root",
+        import_root=tmp_path / "import-root",
     )
     logger = MagicMock()
+    mount_calls = []
+    unmount_calls = []
 
     monkeypatch.setattr(main_module, "load_config", lambda: config)
     monkeypatch.setattr(main_module.os, "geteuid", lambda: 0)
     monkeypatch.setattr(main_module, "build_logger", lambda *args, **kwargs: logger)
     monkeypatch.setattr(main_module, "FileLock", make_mock_process_lock())
-    monkeypatch.setattr(main_module, "is_mountpoint", lambda _: True)
+    monkeypatch.setattr(
+        main_module,
+        "find_candidate_devices",
+        lambda _, logger=None: [mounted_candidate],
+    )
     monkeypatch.setattr(
         main_module,
         "sync_media",
-        lambda config_value, logger, device_value: SyncStats(
+        lambda config_value,
+        logger_value,
+        device_value,
+        mount_path,
+        destination_path: SyncStats(
             synced_files=2,
             skipped=0,
             filtered_out=0,
         ),
     )
-    mount_calls = []
-    unmount_calls = []
     monkeypatch.setattr(
         main_module,
         "mount_device",
@@ -209,17 +218,30 @@ def test_main_returns_one_when_mount_point_already_active(monkeypatch, tmp_path)
     assert not mount_calls
     assert not unmount_calls
     logger.info.assert_any_call(
-        "mount point %s is already active; reusing it", config.mount_point
+        "reusing existing mount %s for %s",
+        Path(mounted_candidate.mountpoint),
+        mounted_candidate.path,
     )
-    logger.info.assert_any_call("syncing from existing mount %s", config.mount_point)
+    logger.info.assert_any_call(
+        "syncing %s to %s",
+        Path(mounted_candidate.mountpoint),
+        config.import_root / mounted_candidate.device_id,
+    )
 
 
-def test_main_returns_one_when_existing_mount_sync_fails(monkeypatch, tmp_path):
+def test_main_returns_one_when_reused_mount_sync_fails(
+    monkeypatch, tmp_path, candidate_device
+):
     main_module = importlib.import_module("photo_import.app")
-    config = Config(
-        mount_point=tmp_path / "mount",
-        destination_root=tmp_path / "dest",
+    mounted_candidate = candidate_device.__class__(
+        **{**candidate_device.__dict__, "mountpoint": "/mnt/camera-sd-card"}
     )
+    config = Config(
+        mount_root=tmp_path / "mount-root",
+        import_root=tmp_path / "import-root",
+    )
+    mount_calls = []
+    unmount_calls = []
 
     monkeypatch.setattr(main_module, "load_config", lambda: config)
     monkeypatch.setattr(main_module.os, "geteuid", lambda: 0)
@@ -227,14 +249,16 @@ def test_main_returns_one_when_existing_mount_sync_fails(monkeypatch, tmp_path):
         main_module, "build_logger", lambda *args, **kwargs: logging.getLogger("test")
     )
     monkeypatch.setattr(main_module, "FileLock", make_mock_process_lock())
-    monkeypatch.setattr(main_module, "is_mountpoint", lambda _: True)
+    monkeypatch.setattr(
+        main_module,
+        "find_candidate_devices",
+        lambda _, logger=None: [mounted_candidate],
+    )
     monkeypatch.setattr(
         main_module,
         "sync_media",
         lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("bad mount")),
     )
-    mount_calls = []
-    unmount_calls = []
     monkeypatch.setattr(
         main_module,
         "mount_device",
@@ -246,7 +270,7 @@ def test_main_returns_one_when_existing_mount_sync_fails(monkeypatch, tmp_path):
         lambda *args, **kwargs: unmount_calls.append((args, kwargs)) or True,
     )
 
-    assert main_module.main() == 1
+    assert main_module.main() == 0
     assert not mount_calls
     assert not unmount_calls
 
@@ -256,13 +280,14 @@ def test_main_continues_to_next_device_when_one_fails(
 ):
     main_module = importlib.import_module("photo_import.app")
     config = Config(
-        mount_point=tmp_path / "mount",
-        destination_root=tmp_path / "dest",
+        mount_root=tmp_path / "mount-root",
+        import_root=tmp_path / "import-root",
     )
 
-    call_count = {"mount": 0, "sync_fail": 0}
+    call_count = {"sync_fail": 0}
 
     def mock_sync_that_fails(*args, **kwargs):
+        del args, kwargs
         call_count["sync_fail"] += 1
         raise Exception("Sync failed")
 
@@ -272,7 +297,6 @@ def test_main_continues_to_next_device_when_one_fails(
         main_module, "build_logger", lambda *args, **kwargs: logging.getLogger("test")
     )
     monkeypatch.setattr(main_module, "FileLock", make_mock_process_lock())
-    monkeypatch.setattr(main_module, "is_mountpoint", lambda _: False)
     monkeypatch.setattr(
         main_module,
         "find_candidate_devices",
@@ -284,5 +308,5 @@ def test_main_continues_to_next_device_when_one_fails(
 
     result = main_module.main()
 
-    assert result == 0  # returns 0 after logging error when all devices fail
+    assert result == 0
     assert call_count["sync_fail"] == 1

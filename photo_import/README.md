@@ -7,8 +7,9 @@
 The workflow should be safe, dependency-free, and unattended:
 
 1. Detect a suitable SD card.
-2. Mount the card as read-only.
-3. Copy supported media files to a configured destination.
+2. Derive a stable device id from block-device metadata.
+3. Mount the card under a managed mount root unless it is already mounted.
+4. Copy supported media files into a per-device import destination.
 4. Exclude thumbnails and preview artifacts.
 5. Unmount the card even when failures occur.
 
@@ -88,8 +89,8 @@ The following items are configurable in `config.py`:
 - `log_file`: Optional path to log file (default: stdout/stderr)
 - `log_level`: Logging threshold such as `INFO` or `DEBUG` (default: `INFO`)
 - `lock_file`: Path to lock file (default: `/tmp/photo-import.lock`)
-- `mount_point`: Mount point for SD card (default: `/mnt/camera-sd-card`)
-- `destination_root`: Destination for imported files
+- `mount_root`: Root directory for derived per-device mount paths
+- `import_root`: Root directory for derived per-device import paths
 - `read_only`: Mount read-only (default: `True`)
 - `allowed_extensions`: Supported file extensions (loaded from `.photoextensions`)
 - `excluded_dir_names`: Directories to skip (loaded from `.photoignore`)
@@ -129,8 +130,10 @@ The script expects root privileges because it mounts and unmounts block devices.
 ## Notes On Current Behavior
 
 - Device discovery is based on `lsblk`.
+- Device ids are derived from ordered metadata parts: model, serial, filesystem type, UUID, and PARTUUID.
 - Candidate partitions are limited to configured filesystem types.
 - The mounted card must contain at least one configured required directory such as `DCIM`.
 - The sync step uses `rsync` with generated include/exclude rules to mirror the selected media subset.
 - Extra files in destination are deleted to make destination match source.
 - Existing destination files that are already identical are skipped by `rsync`.
+- If a candidate device is already mounted, its existing mountpoint is reused instead of remounting it.

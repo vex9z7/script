@@ -14,10 +14,15 @@ def candidate_device():
         path="/dev/mmcblk0p1",
         fstype="exfat",
         label="CARD",
+        uuid="FA86-7EB0",
+        partuuid="part-001",
         size="32G",
         removable=True,
-        model=None,
+        model="SD Reader",
+        serial="CARD123",
         transport="mmc",
+        mountpoint=None,
+        device_id="sd_reader-card123-exfat-fa86-7eb0-part-001",
     )
 
 
@@ -39,12 +44,14 @@ class TestSyncMedia:
         (dcim_dir / "video.mp4").write_text("video", encoding="utf-8")
 
         config = Config(
-            mount_point=mount_point,
-            destination_root=destination_root,
+            mount_root=tmp_path / "mount-root",
+            import_root=tmp_path / "import-root",
         )
 
         # Act
-        stats = sync_media(config, mock_logger, candidate_device)
+        stats = sync_media(
+            config, mock_logger, candidate_device, mount_point, destination_root
+        )
 
         # Assert
         assert stats.synced_files == 2
@@ -82,8 +89,8 @@ class TestSyncMedia:
         (thumbnail_dir / "skip.jpg").write_text("skip")
 
         config = Config(
-            mount_point=mount_point,
-            destination_root=destination_root,
+            mount_root=tmp_path / "mount-root",
+            import_root=tmp_path / "import-root",
             excluded_patterns=[
                 ("*.jpg", False),
                 ("THUMBNAILS", True),
@@ -91,7 +98,9 @@ class TestSyncMedia:
         )
 
         # Act
-        stats = sync_media(config, mock_logger, candidate_device)
+        stats = sync_media(
+            config, mock_logger, candidate_device, mount_point, destination_root
+        )
 
         # Assert
         assert stats.synced_files == 1
@@ -110,8 +119,8 @@ class TestSyncMedia:
         (dcim_dir / "preview.thm").write_text("preview")
 
         config = Config(
-            mount_point=mount_point,
-            destination_root=destination_root,
+            mount_root=tmp_path / "mount-root",
+            import_root=tmp_path / "import-root",
             excluded_patterns=[
                 ("*.jpg", False),
                 ("*.mp4", False),
@@ -120,7 +129,9 @@ class TestSyncMedia:
         )
 
         # Act
-        stats = sync_media(config, mock_logger, candidate_device)
+        stats = sync_media(
+            config, mock_logger, candidate_device, mount_point, destination_root
+        )
 
         # Assert
         assert stats.synced_files == 1  # photo.jpg
@@ -138,8 +149,8 @@ class TestSyncMedia:
         (dcim_dir / "DSC00982.THM").write_text("thumb")
 
         config = Config(
-            mount_point=mount_point,
-            destination_root=destination_root,
+            mount_root=tmp_path / "mount-root",
+            import_root=tmp_path / "import-root",
             excluded_patterns=[
                 ("*.jpg", False),
                 ("*.JPG", False),
@@ -148,7 +159,9 @@ class TestSyncMedia:
             ],
         )
 
-        stats = sync_media(config, mock_logger, candidate_device)
+        stats = sync_media(
+            config, mock_logger, candidate_device, mount_point, destination_root
+        )
 
         assert stats.synced_files == 1
         assert (destination_root / "DCIM" / "100MSDCF" / "DSC00982.JPG").exists()
@@ -165,8 +178,8 @@ class TestSyncMedia:
         (dcim_dir / "existing.jpg").write_text("existing")
 
         config = Config(
-            mount_point=mount_point,
-            destination_root=destination_root,
+            mount_root=tmp_path / "mount-root",
+            import_root=tmp_path / "import-root",
         )
 
         with patch("photo_import.photo_sync.sync") as mock_sync:
@@ -175,7 +188,9 @@ class TestSyncMedia:
             mock_sync.return_value.deleted = 0
 
             # Act
-            stats = sync_media(config, mock_logger, candidate_device)
+            stats = sync_media(
+                config, mock_logger, candidate_device, mount_point, destination_root
+            )
 
         # Assert
         assert stats.synced_files == 0
