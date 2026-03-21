@@ -60,9 +60,6 @@ class Config:
     )
 
 
-DEFAULT_CONFIG = Config()
-
-
 class ConfigurationError(ValueError):
     pass
 

@@ -2,11 +2,11 @@ import fcntl
 import os
 
 
-class ProcessLock:
-    """File-based process lock using fcntl.flock().
+class FileLock:
+    """File-based lock using fcntl.flock().
 
     Usage:
-        with ProcessLock("/tmp/app.lock"):
+        with FileLock("/tmp/app.lock"):
             # work
     """
 
@@ -27,4 +27,4 @@ class ProcessLock:
         self._file.close()
 
 
-__all__ = ["ProcessLock"]
+__all__ = ["FileLock"]

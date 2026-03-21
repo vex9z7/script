@@ -11,7 +11,7 @@ from detect import find_candidate_devices
 from mount import is_mountpoint, mount_device
 from photo_sync import sync_media
 
-from flockplus import ProcessLock
+from flockplus import FileLock
 from log import build_logger
 
 
@@ -28,7 +28,7 @@ def main() -> int:
         logger.error("must run as root")
         return 1
 
-    with ProcessLock(config.lock_file):
+    with FileLock(config.lock_file):
         mount_point = Path(config.mount_point)
         destination_root = Path(config.destination_root)
 

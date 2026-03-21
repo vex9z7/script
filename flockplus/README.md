@@ -1,19 +1,19 @@
 # `flockplus`
 
-A simple file-based process lock using Python's native `fcntl.flock()`. Linux only, no external dependencies.
+A simple file-based lock using Python's native `fcntl.flock()`. Linux only, no external dependencies.
 
 ## Usage
 
 ```python
-from flockplus import ProcessLock
+from flockplus import FileLock
 
-with ProcessLock("/tmp/my-script.lock"):
+with FileLock("/tmp/my-script.lock"):
     # work
 ```
 
 ## API
 
-### `ProcessLock(lock_path)`
+### `FileLock(lock_path)`
 
 Context manager that acquires an exclusive lock using `fcntl.flock()`.
 

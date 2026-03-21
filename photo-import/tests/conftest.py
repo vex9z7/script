@@ -16,7 +16,7 @@ from detect import CandidateDevice
 
 
 def make_mock_process_lock():
-    class MockProcessLock:
+    class MockFileLock:
         def __init__(self, lock_path):
             self.lock_path = lock_path
 
@@ -26,7 +26,7 @@ def make_mock_process_lock():
         def __exit__(self, *args):
             pass
 
-    return MockProcessLock
+    return MockFileLock
 
 
 @pytest.fixture

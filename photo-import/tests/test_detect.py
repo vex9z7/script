@@ -5,31 +5,7 @@ from unittest.mock import patch, MagicMock
 import pytest
 
 from config import Config
-from detect import find_candidate_devices, get_lsblk, run, _to_bool
-
-
-class TestRun:
-    def test_should_call_subprocess_with_correct_args(self):
-        # Arrange
-        with patch("detect.subprocess.run") as mock_run:
-            mock_run.return_value = MagicMock(stdout="ok", returncode=0)
-
-            # Act
-            result = run(["lsblk", "-J"])
-
-        # Assert
-        mock_run.assert_called_once_with(
-            ["lsblk", "-J"], text=True, capture_output=True, check=True
-        )
-
-    def test_should_raise_on_subprocess_failure(self):
-        # Arrange
-        with patch("detect.subprocess.run") as mock_run:
-            mock_run.side_effect = Exception("Command failed")
-
-            # Act & Assert
-            with pytest.raises(Exception, match="Command failed"):
-                run(["lsblk"])
+from detect import find_candidate_devices, get_lsblk
 
 
 class TestGetLsblk:
@@ -44,25 +20,6 @@ class TestGetLsblk:
 
         # Assert
         assert result == {"blockdevices": [{"name": "sda"}]}
-
-
-class TestToBool:
-    def test_should_return_false_for_zero_values(self):
-        assert _to_bool(0) is False
-        assert _to_bool("0") is False
-        assert _to_bool(False) is False
-
-    def test_should_return_true_for_one_values(self):
-        assert _to_bool(1) is True
-        assert _to_bool("1") is True
-        assert _to_bool(True) is True
-
-    def test_should_return_none_for_invalid_values(self):
-        assert _to_bool("yes") is None
-        assert _to_bool("no") is None
-        assert _to_bool("") is None
-        assert _to_bool(None) is None
-        assert _to_bool(2) is None
 
 
 class TestFindCandidateDevices:

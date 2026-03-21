@@ -19,85 +19,81 @@ class CandidateDevice:
     transport: str | None
 
 
-def run(cmd: list[str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(cmd, text=True, capture_output=True, check=True)
-
-
 # System dependency: requires `lsblk` from util-linux
 def get_lsblk() -> dict:
-    result = run(
+    result = subprocess.run(
         [
             "lsblk",
             "-J",
             "-o",
             "NAME,PATH,FSTYPE,TYPE,MOUNTPOINT,LABEL,RM,SIZE,MODEL,TRAN",
-        ]
+        ],
+        text=True,
+        capture_output=True,
+        check=True,
     )
     return json.loads(result.stdout)
 
 
 def flatten_blockdevices(devices: list[dict]) -> list[dict]:
-    flattened: list[dict] = []
-
-    def walk(device: dict) -> None:
-        flattened.append(device)
-        for child in device.get("children", []) or []:
-            walk(child)
-
-    for device in devices:
-        walk(device)
-    return flattened
+    result = []
+    for d in devices:
+        result.append(d)
+        result.extend(flatten_blockdevices(d.get("children") or []))
+    return result
 
 
 def find_candidate_devices(config: Config) -> list[CandidateDevice]:
     data = get_lsblk()
     devices = flatten_blockdevices(data.get("blockdevices", []))
-    candidates: list[CandidateDevice] = []
-    supported_filesystems = {value.lower() for value in config.supported_filesystems}
+    candidates = []
 
     for device in devices:
-        if device.get("type") != "part":
+        if not _is_candidate(device, config):
             continue
+        candidates.append(_to_candidate(device))
 
-        fstype = (device.get("fstype") or "").lower()
-        if fstype not in supported_filesystems:
-            continue
-
-        if device.get("mountpoint"):
-            continue
-
-        path = device.get("path")
-        if not path:
-            continue
-
-        if not match_any(path, config.device_patterns):
-            continue
-
-        candidates.append(
-            CandidateDevice(
-                path=path,
-                fstype=fstype,
-                label=device.get("label"),
-                size=device.get("size"),
-                removable=_to_bool(device.get("rm")),
-                model=device.get("model"),
-                transport=device.get("tran"),
-            )
-        )
-
-    candidates.sort(key=_candidate_sort_key)
+    candidates.sort(key=lambda d: d.path)
     return candidates
 
 
-def _to_bool(value: object) -> bool | None:
-    if value in (0, "0", False):
+def _is_candidate(device: dict, config: Config) -> bool:
+    if device.get("type") != "part":
         return False
-    if value in (1, "1", True):
-        return True
-    return None
+
+    fstype = (device.get("fstype") or "").lower()
+    if fstype not in {fs.lower() for fs in config.supported_filesystems}:
+        return False
+
+    if device.get("mountpoint"):
+        return False
+
+    path = device.get("path")
+    if not path or not match_any(path, config.device_patterns):
+        return False
+
+    if device.get("rm") not in (1, "1", True):
+        return False
+
+    transport = (device.get("tran") or "").lower()
+    if transport not in {"usb", "mmc"}:
+        return False
+
+    return True
 
 
-def _candidate_sort_key(device: CandidateDevice) -> tuple[int, int, str]:
-    removable_score = 0 if device.removable else 1
-    transport_score = 0 if (device.transport or "").lower() in {"usb", "mmc"} else 1
-    return (removable_score, transport_score, device.path)
+def _to_candidate(device: dict) -> CandidateDevice:
+    rm = device.get("rm")
+    removable = (
+        False if rm in (0, "0", False) else (True if rm in (1, "1", True) else None)
+    )
+
+    return CandidateDevice(
+        path=device["path"],
+        fstype=(device.get("fstype") or "").lower(),
+        label=device.get("label"),
+        size=device.get("size"),
+        removable=removable,
+        model=device.get("model"),
+        transport=device.get("tran"),
+    )
