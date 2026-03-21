@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from config import Config
@@ -33,53 +33,107 @@ def mock_logger():
     return MagicMock()
 
 
-def test_sync_media_copies_allowed_media_and_skips_excluded_items(
-    tmp_path, candidate_device, mock_logger
-):
-    mount_point = tmp_path / "mount"
-    destination_root = tmp_path / "dest"
-    dcim_dir = mount_point / "DCIM" / "100CANON"
-    thumbnail_dir = mount_point / "THUMBNAILS"
+class TestSyncMedia:
+    def test_should_copy_allowed_media_files(
+        self, tmp_path, candidate_device, mock_logger
+    ):
+        # Arrange
+        mount_point = tmp_path / "mount"
+        destination_root = tmp_path / "dest"
+        dcim_dir = mount_point / "DCIM" / "100CANON"
+        dcim_dir.mkdir(parents=True)
+        (dcim_dir / "image.JPG").write_text("image", encoding="utf-8")
+        (dcim_dir / "video.MP4").write_text("video", encoding="utf-8")
 
-    dcim_dir.mkdir(parents=True)
-    thumbnail_dir.mkdir(parents=True)
-    (dcim_dir / "image.JPG").write_text("image", encoding="utf-8")
-    (dcim_dir / "video.MP4").write_text("video", encoding="utf-8")
-    (dcim_dir / "preview.THM").write_text("thumbnail", encoding="utf-8")
-    (dcim_dir / "notes.txt").write_text("ignore", encoding="utf-8")
-    (thumbnail_dir / "skip.jpg").write_text("skip", encoding="utf-8")
-
-    config = Config(
-        mount_point=mount_point,
-        destination_root=destination_root,
-        excluded_dir_names=frozenset({"thumbnails"}),
-    )
-
-    stats = sync_media(config, mock_logger, candidate_device)
-
-    assert stats.synced_files == 2
-    assert stats.filtered_out == 1
-    assert stats.skipped == 0
-    assert (destination_root / "DCIM" / "100CANON" / "image.JPG").read_text() == "image"
-    assert (destination_root / "DCIM" / "100CANON" / "video.MP4").read_text() == "video"
-    assert not (destination_root / "THUMBNAILS" / "skip.jpg").exists()
-
-
-def test_sync_media_reports_skipped_when_sync_skips(
-    monkeypatch, tmp_path, candidate_device, mock_logger
-):
-    monkeypatch.setattr("photo_sync._has_required_layout", lambda *_: True)
-
-    mock_sync_result = MagicMock()
-    mock_sync_result.copied = 0
-    mock_sync_result.skipped = 3
-
-    with patch("photo_sync.sync", return_value=mock_sync_result):
         config = Config(
-            mount_point=tmp_path / "mount",
-            destination_root=tmp_path / "dest",
+            mount_point=mount_point,
+            destination_root=destination_root,
         )
+
+        # Act
         stats = sync_media(config, mock_logger, candidate_device)
 
-    assert stats.synced_files == 0
-    assert stats.skipped == 3
+        # Assert
+        assert stats.synced_files == 2
+        assert (
+            destination_root / "DCIM" / "100CANON" / "image.JPG"
+        ).read_text() == "image"
+        assert (
+            destination_root / "DCIM" / "100CANON" / "video.MP4"
+        ).read_text() == "video"
+
+    def test_should_skip_excluded_directories(
+        self, tmp_path, candidate_device, mock_logger
+    ):
+        # Arrange
+        mount_point = tmp_path / "mount"
+        destination_root = tmp_path / "dest"
+        dcim_dir = mount_point / "DCIM"
+        thumbnail_dir = mount_point / "THUMBNAILS"
+        dcim_dir.mkdir(parents=True)
+        thumbnail_dir.mkdir(parents=True)
+        (dcim_dir / "photo.jpg").write_text("photo")
+        (thumbnail_dir / "skip.jpg").write_text("skip")
+
+        config = Config(
+            mount_point=mount_point,
+            destination_root=destination_root,
+            excluded_dir_names=frozenset({"thumbnails"}),
+        )
+
+        # Act
+        stats = sync_media(config, mock_logger, candidate_device)
+
+        # Assert
+        assert stats.synced_files == 1
+        assert not (destination_root / "THUMBNAILS" / "skip.jpg").exists()
+
+    def test_should_filter_files_by_extension(
+        self, tmp_path, candidate_device, mock_logger
+    ):
+        # Arrange
+        mount_point = tmp_path / "mount"
+        destination_root = tmp_path / "dest"
+        dcim_dir = mount_point / "DCIM"
+        dcim_dir.mkdir(parents=True)
+        (dcim_dir / "photo.jpg").write_text("photo")
+        (dcim_dir / "notes.txt").write_text("notes")
+        (dcim_dir / "preview.thm").write_text("preview")
+
+        config = Config(
+            mount_point=mount_point,
+            destination_root=destination_root,
+            allowed_extensions=frozenset({".jpg", ".mp4"}),
+        )
+
+        # Act
+        stats = sync_media(config, mock_logger, candidate_device)
+
+        # Assert
+        assert stats.synced_files == 1
+        assert (
+            stats.filtered_out == 1
+        )  # only .txt is filtered; .thm is excluded (not counted)
+
+    def test_should_report_skipped_when_sync_skips(
+        self, tmp_path, candidate_device, mock_logger
+    ):
+        # Arrange
+        mount_point = tmp_path / "mount"
+        destination_root = tmp_path / "dest"
+        dcim_dir = mount_point / "DCIM"
+        dcim_dir.mkdir(parents=True)
+        (dcim_dir / "existing.jpg").write_text("existing")
+
+        config = Config(
+            mount_point=mount_point,
+            destination_root=destination_root,
+        )
+
+        # Act - run twice to trigger skips
+        sync_media(config, mock_logger, candidate_device)
+        stats = sync_media(config, mock_logger, candidate_device)
+
+        # Assert
+        assert stats.synced_files == 0
+        assert stats.skipped == 1
