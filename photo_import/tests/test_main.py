@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from unittest.mock import MagicMock
 
 from photo_import.config import Config
 from photo_import.tests.conftest import make_mock_process_lock
@@ -40,12 +41,11 @@ def test_main_runs_successful_import_flow(monkeypatch, tmp_path, candidate_devic
         destination_root=tmp_path / "dest",
     )
     calls = []
+    logger = MagicMock()
 
     monkeypatch.setattr(main_module, "load_config", lambda: config)
     monkeypatch.setattr(main_module.os, "geteuid", lambda: 0)
-    monkeypatch.setattr(
-        main_module, "build_logger", lambda *args, **kwargs: logging.getLogger("test")
-    )
+    monkeypatch.setattr(main_module, "build_logger", lambda *args, **kwargs: logger)
     monkeypatch.setattr(main_module, "FileLock", make_mock_process_lock())
     monkeypatch.setattr(main_module, "is_mountpoint", lambda _: False)
     monkeypatch.setattr(
@@ -83,6 +83,15 @@ def test_main_runs_successful_import_flow(monkeypatch, tmp_path, candidate_devic
     )
     assert calls[1] == ("sync", config.destination_root, candidate_device.path)
     assert calls[2] == ("unmount", config.mount_point)
+    logger.info.assert_any_call(
+        "mounting device %s at %s (read_only=%s)",
+        candidate_device.path,
+        config.mount_point,
+        config.read_only,
+    )
+    logger.debug.assert_any_call(
+        "mounted device %s at %s", candidate_device.path, config.mount_point
+    )
 
 
 def test_main_returns_one_when_unmount_fails(monkeypatch, tmp_path, candidate_device):
@@ -167,12 +176,11 @@ def test_main_returns_one_when_mount_point_already_active(monkeypatch, tmp_path)
         mount_point=tmp_path / "mount",
         destination_root=tmp_path / "dest",
     )
+    logger = MagicMock()
 
     monkeypatch.setattr(main_module, "load_config", lambda: config)
     monkeypatch.setattr(main_module.os, "geteuid", lambda: 0)
-    monkeypatch.setattr(
-        main_module, "build_logger", lambda *args, **kwargs: logging.getLogger("test")
-    )
+    monkeypatch.setattr(main_module, "build_logger", lambda *args, **kwargs: logger)
     monkeypatch.setattr(main_module, "FileLock", make_mock_process_lock())
     monkeypatch.setattr(main_module, "is_mountpoint", lambda _: True)
     monkeypatch.setattr(
@@ -200,6 +208,10 @@ def test_main_returns_one_when_mount_point_already_active(monkeypatch, tmp_path)
     assert main_module.main() == 0
     assert not mount_calls
     assert not unmount_calls
+    logger.info.assert_any_call(
+        "mount point %s is already active; reusing it", config.mount_point
+    )
+    logger.info.assert_any_call("syncing from existing mount %s", config.mount_point)
 
 
 def test_main_returns_one_when_existing_mount_sync_fails(monkeypatch, tmp_path):

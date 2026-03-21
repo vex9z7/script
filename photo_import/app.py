@@ -48,6 +48,7 @@ def main() -> int:
             )
 
             try:
+                logger.info("syncing from existing mount %s", mount_point)
                 stats = sync_media(config, logger, mounted_device)
             except Exception as exc:
                 logger.exception("existing mount %s failed: %s", mount_point, exc)
@@ -65,7 +66,14 @@ def main() -> int:
 
         for device in candidates:
             try:
+                logger.info(
+                    "mounting device %s at %s (read_only=%s)",
+                    device.path,
+                    mount_point,
+                    config.read_only,
+                )
                 mount_device(device.path, mount_point, read_only=config.read_only)
+                logger.debug("mounted device %s at %s", device.path, mount_point)
                 stats = sync_media(config, logger, device)
                 logger.info(
                     "imported %s files from %s", stats.synced_files, device.label

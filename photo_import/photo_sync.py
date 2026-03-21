@@ -26,6 +26,13 @@ def sync_media(config: Config, logger, device: CandidateDevice) -> SyncStats:
 
     destination_root.mkdir(parents=True, exist_ok=True)
 
+    logger.debug(
+        "starting sync from %s to %s for %s",
+        mount_point,
+        destination_root,
+        device.path,
+    )
+
     if not _has_required_layout(mount_point, config):
         raise RuntimeError(
             "mounted device "
@@ -65,6 +72,13 @@ def sync_media(config: Config, logger, device: CandidateDevice) -> SyncStats:
         logger.info("synced %s files", sync_stats.copied)
     if sync_stats.skipped:
         logger.info("skipped %s existing files", sync_stats.skipped)
+    logger.debug(
+        "sync complete for %s: copied=%s skipped=%s filtered_out=%s",
+        device.path,
+        sync_stats.copied,
+        sync_stats.skipped,
+        filtered_out_count,
+    )
 
     return SyncStats(
         synced_files=sync_stats.copied,

@@ -54,6 +54,19 @@ class TestSyncMedia:
         assert (
             destination_root / "DCIM" / "100CANON" / "video.mp4"
         ).read_text() == "video"
+        mock_logger.debug.assert_any_call(
+            "starting sync from %s to %s for %s",
+            mount_point,
+            destination_root,
+            candidate_device.path,
+        )
+        mock_logger.debug.assert_any_call(
+            "sync complete for %s: copied=%s skipped=%s filtered_out=%s",
+            candidate_device.path,
+            2,
+            0,
+            0,
+        )
 
     def test_should_skip_excluded_directories(
         self, tmp_path, candidate_device, mock_logger
