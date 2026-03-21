@@ -1,0 +1,27 @@
+[MASTER]
+py-version=3.11
+jobs=0
+persistent=no
+fail-under=10.0
+
+[MESSAGES_CONTROL]
+disable=
+    C0114,  # missing-module-docstring
+    C0115,  # missing-class-docstring
+    C0116,  # missing-function-docstring
+    C0413,  # wrong-import-position in test bootstrap modules
+    C0415,  # import-outside-toplevel in tests with scoped imports
+    R0801,  # duplicate-code in fixture-heavy tests
+    R0903,  # too-few-public-methods for test classes and dataclasses
+    W0613,  # unused-argument for pytest hooks, mocks, and reserved API args
+    W0621,  # redefined-outer-name from pytest fixture injection
+    W0622,  # redefined-builtin for stable public API names like filter
+    W0718,  # broad-exception-caught in operational cleanup paths
+    W0719,  # broad-exception-raised in failure-oriented tests
+
+[FORMAT]
+max-line-length=100
+
+[DESIGN]
+max-attributes=10
+max-returns=8

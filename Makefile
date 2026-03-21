@@ -1,17 +1,14 @@
 PYTHON ?= .venv/bin/python
-RUFF ?= .venv/bin/ruff
+PYLINT ?= .venv/bin/pylint
 PYTEST ?= .venv/bin/pytest
 
-.PHONY: fmt lint test check
-
-fmt:
-	$(RUFF) format .
+.PHONY: lint test check
 
 lint:
-	$(RUFF) check .
+	$(PYLINT) $$(git ls-files '*.py')
 
 test:
-	$(PYTEST) -q photo-import/tests
+	$(PYTEST) -q
 
 check:
 	$(PYTHON) -m compileall photo-import

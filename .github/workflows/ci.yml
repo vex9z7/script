@@ -1,28 +1,38 @@
-name: CI
+name: Python CI
 
 on:
+  push:
+    branches: [main, master, dev]
   pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
 
 jobs:
-  test:
+  install:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+      - name: Set up Python environment
+        uses: ./.github/actions/python-ci-setup
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+  lint:
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Python environment
+        uses: ./.github/actions/python-ci-setup
+      - name: Run pylint
+        run: pylint $(git ls-files '*.py')
 
-      - name: Install dependencies
-        run: |
-          pip install -r requirements-dev.txt
-
-      - name: Run formatter
-        run: ruff format --check .
-
-      - name: Run linter
-        run: ruff check .
-
+  test:
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Python environment
+        uses: ./.github/actions/python-ci-setup
       - name: Run tests
         run: pytest -q

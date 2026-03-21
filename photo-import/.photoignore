@@ -1,0 +1,42 @@
+# Patterns for photo-import
+# fnmatch-style glob - last match wins
+# Prefix with ! to exclude
+
+# Images
+*.jpg
+*.jpeg
+*.png
+*.heic
+*.heif
+*.arw
+*.cr2
+*.cr3
+*.nef
+*.dng
+*.raf
+*.rw2
+*.orf
+*.srw
+
+# Videos
+*.mp4
+*.mov
+*.mts
+*.m2ts
+*.avi
+*.mkv
+
+# Thumbnails
+!*THUMBNAILS*
+!*thumb*
+!*Thumb*
+
+# System directories
+!*trashes*
+!*Spotlight*
+!*@eaDir*
+
+# File suffixes (excluded)
+!*.THM
+!*.thm
+!*.thumb
