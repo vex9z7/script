@@ -14,8 +14,6 @@ for path in (PROJECT_ROOT, PHOTO_IMPORT_ROOT):
 
 from detect import CandidateDevice
 
-from lock import LockError
-
 
 def make_mock_process_lock():
     class MockProcessLock:
@@ -37,7 +35,7 @@ def make_busy_lock():
             pass
 
         def __enter__(self):
-            raise LockError("busy")
+            raise OSError("resource unavailable")
 
         def __exit__(self, *args):
             pass

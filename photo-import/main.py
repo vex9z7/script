@@ -12,7 +12,7 @@ from detect import find_candidate_devices
 from mount import is_mountpoint, mount_device
 from photo_sync import sync_media
 
-from lock import LockError, ProcessLock
+from flockplus import ProcessLock
 from log import build_logger
 
 
@@ -89,7 +89,7 @@ def main() -> int:
 
                 logger.info("import completed successfully: %s", import_record)
                 return 0
-    except LockError:
+    except OSError:
         logger.info("another photo-import process is already running; exiting")
         return 0
 
