@@ -130,6 +130,86 @@ class TestFindCandidateDevices:
         # Assert
         assert not candidates
 
+    def test_should_log_rejection_reasons_when_logger_provided(
+        self, monkeypatch, tmp_path
+    ):
+        config = Config(
+            mount_point=tmp_path / "mount",
+            destination_root=tmp_path / "dest",
+        )
+        logger = MagicMock()
+        lsblk_data = {
+            "blockdevices": [
+                {
+                    "name": "sda",
+                    "path": "/dev/sda",
+                    "type": "disk",
+                    "children": [
+                        {
+                            "name": "sda1",
+                            "path": "/dev/sda1",
+                            "type": "part",
+                            "fstype": "ext4",
+                            "mountpoint": None,
+                            "label": "SYSTEM",
+                            "rm": 1,
+                            "size": "64G",
+                            "model": None,
+                            "tran": "usb",
+                        }
+                    ],
+                }
+            ]
+        }
+
+        monkeypatch.setattr("photo_import.detect.get_lsblk", lambda: lsblk_data)
+
+        candidates = find_candidate_devices(config, logger=logger)
+
+        assert not candidates
+        logger.debug.assert_any_call(
+            "device %s %s", "/dev/sda", "rejected: type=disk, expected part"
+        )
+        logger.debug.assert_any_call(
+            "device %s %s", "/dev/sda1", "rejected: unsupported filesystem ext4"
+        )
+
+    def test_should_log_acceptance_reason_when_candidate_selected(
+        self, monkeypatch, tmp_path
+    ):
+        config = Config(
+            mount_point=tmp_path / "mount",
+            destination_root=tmp_path / "dest",
+        )
+        logger = MagicMock()
+        lsblk_data = {
+            "blockdevices": [
+                {
+                    "name": "mmcblk0p1",
+                    "path": "/dev/mmcblk0p1",
+                    "type": "part",
+                    "fstype": "vfat",
+                    "mountpoint": None,
+                    "label": "CARD",
+                    "rm": 1,
+                    "size": "32G",
+                    "model": None,
+                    "tran": "mmc",
+                }
+            ]
+        }
+
+        monkeypatch.setattr("photo_import.detect.get_lsblk", lambda: lsblk_data)
+
+        candidates = find_candidate_devices(config, logger=logger)
+
+        assert [device.path for device in candidates] == ["/dev/mmcblk0p1"]
+        logger.debug.assert_called_with(
+            "device %s %s",
+            "/dev/mmcblk0p1",
+            "accepted: fstype=vfat, label=CARD, rm=1, tran=mmc",
+        )
+
 
 class TestFindCandidateDevicesWithPatterns:
     def test_should_filter_devices_by_patterns(self, monkeypatch, tmp_path):

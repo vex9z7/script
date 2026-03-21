@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import subprocess
 from dataclasses import dataclass
 
@@ -54,13 +55,21 @@ def flatten_blockdevices(devices: list[dict]) -> list[dict]:
     return result
 
 
-def find_candidate_devices(config: Config) -> list[CandidateDevice]:
+def find_candidate_devices(
+    config: Config, logger: logging.Logger | None = None
+) -> list[CandidateDevice]:
     data = get_lsblk()
     devices = flatten_blockdevices(data.get("blockdevices", []))
     candidates = []
 
     for device in devices:
-        if not _is_candidate(device, config):
+        accepted, reason = _candidate_status(device, config)
+        path = device.get("path") or device.get("name") or "<unknown>"
+
+        if logger is not None:
+            logger.debug("device %s %s", path, reason)
+
+        if not accepted:
             continue
         candidates.append(_to_candidate(device))
 
@@ -68,29 +77,33 @@ def find_candidate_devices(config: Config) -> list[CandidateDevice]:
     return candidates
 
 
-def _is_candidate(device: dict, config: Config) -> bool:
+def _candidate_status(device: dict, config: Config) -> tuple[bool, str]:
     if device.get("type") != "part":
-        return False
+        return False, f"rejected: type={device.get('type')}, expected part"
 
     fstype = (device.get("fstype") or "").lower()
     if fstype not in {fs.lower() for fs in config.supported_filesystems}:
-        return False
+        return False, f"rejected: unsupported filesystem {fstype or '<none>'}"
 
     if device.get("mountpoint"):
-        return False
+        return False, f"rejected: already mounted at {device.get('mountpoint')}"
 
     path = device.get("path")
     if not path or not match_any(path, config.device_patterns):
-        return False
+        return False, "rejected: path does not match configured device patterns"
 
     if not _parse_rm(device.get("rm")):
-        return False
+        return False, f"rejected: rm={device.get('rm')}, not removable"
 
     transport = (device.get("tran") or "").lower()
     if transport not in _REMOVABLE_TRANSPORTS:
-        return False
+        return False, f"rejected: unsupported transport {transport or '<none>'}"
 
-    return True
+    return True, (
+        "accepted: "
+        f"fstype={fstype}, label={device.get('label') or '<none>'}, "
+        f"rm={device.get('rm')}, tran={transport}"
+    )
 
 
 def _to_candidate(device: dict) -> CandidateDevice:

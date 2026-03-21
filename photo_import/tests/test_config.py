@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import tempfile
 from pathlib import Path
@@ -65,6 +66,7 @@ class TestConfigDefaults:
         config = config_module.Config()
 
         assert config.log_file is None
+        assert config.log_level == logging.INFO
         assert config.lock_file == Path()
         assert config.mount_point is None
         assert config.destination_root is None
@@ -98,12 +100,14 @@ class TestLoadConfig:
             "PHOTO_IMPORT_MOUNT_POINT": "/src",
             "PHOTO_IMPORT_DESTINATION_ROOT": "/dest",
             "PHOTO_IMPORT_LOG_FILE": "/var/log/photo-import.log",
+            "PHOTO_IMPORT_LOG_LEVEL": "DEBUG",
             "PHOTO_IMPORT_LOCK_FILE": "/custom/lock",
         }
 
         config = config_module.load_config(env)
 
         assert config.log_file == Path("/var/log/photo-import.log")
+        assert config.log_level == logging.DEBUG
         assert config.lock_file == Path("/custom/lock")
         assert config.mount_point == Path("/src")
         assert config.destination_root == Path("/dest")
@@ -119,6 +123,7 @@ class TestLoadConfig:
         config = config_module.load_config(env)
 
         assert config.log_file is None
+        assert config.log_level == logging.INFO
 
     def test_load_config_raises_when_lock_file_missing(self):
         env = {
@@ -141,3 +146,16 @@ class TestLoadConfig:
         assert config.mount_point == Path("/src")
         assert config.destination_root == Path("/dest")
         assert config.lock_file == Path("/tmp/photo-import.lock")
+
+    def test_load_config_raises_when_log_level_invalid(self):
+        env = {
+            "PHOTO_IMPORT_MOUNT_POINT": "/src",
+            "PHOTO_IMPORT_DESTINATION_ROOT": "/dest",
+            "PHOTO_IMPORT_LOCK_FILE": "/tmp/photo-import.lock",
+            "PHOTO_IMPORT_LOG_LEVEL": "verbose",
+        }
+
+        with pytest.raises(
+            config_module.ConfigurationError, match="PHOTO_IMPORT_LOG_LEVEL"
+        ):
+            config_module.load_config(env)

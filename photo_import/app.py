@@ -20,7 +20,11 @@ def main() -> int:
         print(f"Configuration error: {e}", file=sys.stderr)
         return 1
 
-    logger = build_logger("photo_import", log_file=config.log_file)
+    logger = build_logger(
+        "photo_import",
+        level=config.log_level,
+        log_file=config.log_file,
+    )
     assert config.mount_point is not None
 
     mount_point = config.mount_point
@@ -34,7 +38,7 @@ def main() -> int:
             logger.warning("mount point %s is already active", mount_point)
             return 1
 
-        candidates = find_candidate_devices(config)
+        candidates = find_candidate_devices(config, logger=logger)
         if not candidates:
             logger.info("no suitable SD card candidate found")
             return 0
