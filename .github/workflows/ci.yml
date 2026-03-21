@@ -28,7 +28,7 @@ jobs:
           python -m pip install -r requirements-dev.txt
 
       - name: Run pylint
-        run: make lint
+        run: make lint PYLINT=pylint
 
   test:
     runs-on: ubuntu-latest
@@ -48,4 +48,4 @@ jobs:
           python -m pip install -r requirements-dev.txt
 
       - name: Run tests
-        run: make test
+        run: make test PYTEST=pytest
