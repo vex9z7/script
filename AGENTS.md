@@ -119,3 +119,9 @@ Test **multiple components working together**. May use real dependencies.
 | File operations | Unit test with mocks |
 | Component interactions | Integration test |
 | End-to-end workflows | Integration test |
+
+## Development Environment
+
+- Use `venv` for local development (not `uv`)
+- Commands like `python -m pytest`, `make test`, etc. should use the venv
+- Use `uv` only when user explicitly requests it or for CI/CD purposes
