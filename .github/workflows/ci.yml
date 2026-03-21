@@ -2,9 +2,10 @@ name: Python CI
 
 on:
   push:
-    branches: [main, master, dev]
+    branches: [master]
   pull_request:
-    branches: [main, master]
+    branches: [master]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -28,12 +29,13 @@ jobs:
         run: pylint $(git ls-files '*.py')
 
   importcheck:
-    needs: install
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Set up Python environment
-        uses: ./.github/actions/python-ci-setup
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
       - name: Run import check
         run: python3 run.py importcheck
 

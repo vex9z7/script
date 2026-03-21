@@ -54,6 +54,19 @@ class TestSyncMedia:
         assert (
             destination_root / "DCIM" / "100CANON" / "video.mp4"
         ).read_text() == "video"
+        mock_logger.debug.assert_any_call(
+            "starting sync from %s to %s for %s",
+            mount_point,
+            destination_root,
+            candidate_device.path,
+        )
+        mock_logger.debug.assert_any_call(
+            "sync complete for %s: copied=%s skipped=%s filtered_out=%s",
+            candidate_device.path,
+            2,
+            0,
+            0,
+        )
 
     def test_should_skip_excluded_directories(
         self, tmp_path, candidate_device, mock_logger
@@ -113,6 +126,33 @@ class TestSyncMedia:
         assert stats.synced_files == 1  # photo.jpg
         assert stats.filtered_out == 1  # notes.txt (no match)
         # preview.thm is excluded (not counted)
+
+    def test_should_match_explicit_uppercase_patterns(
+        self, tmp_path, candidate_device, mock_logger
+    ):
+        mount_point = tmp_path / "mount"
+        destination_root = tmp_path / "dest"
+        dcim_dir = mount_point / "DCIM" / "100MSDCF"
+        dcim_dir.mkdir(parents=True)
+        (dcim_dir / "DSC00982.JPG").write_text("image")
+        (dcim_dir / "DSC00982.THM").write_text("thumb")
+
+        config = Config(
+            mount_point=mount_point,
+            destination_root=destination_root,
+            excluded_patterns=[
+                ("*.jpg", False),
+                ("*.JPG", False),
+                ("*.thm", True),
+                ("*.THM", True),
+            ],
+        )
+
+        stats = sync_media(config, mock_logger, candidate_device)
+
+        assert stats.synced_files == 1
+        assert (destination_root / "DCIM" / "100MSDCF" / "DSC00982.JPG").exists()
+        assert not (destination_root / "DCIM" / "100MSDCF" / "DSC00982.THM").exists()
 
     def test_should_report_skipped_when_sync_skips(
         self, tmp_path, candidate_device, mock_logger
