@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import fnmatch
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -16,6 +17,22 @@ class SyncStats:
     filtered_out: int = 0
 
 
+def _matches(name: str, patterns: list[tuple[str, bool]]) -> tuple[bool, bool]:
+    """Check if name matches patterns (fnmatch-style, last match wins).
+
+    Returns (matches, excluded) tuple.
+    - matches: True if name matches any pattern
+    - excluded: True if the last matching pattern is an exclusion (starts with !)
+    """
+    matched = False
+    excluded = False
+    for pattern, is_excluded in patterns:
+        if fnmatch.fnmatch(name, pattern):
+            matched = True
+            excluded = is_excluded
+    return matched, excluded
+
+
 def sync_media(config: Config, logger, device: CandidateDevice) -> SyncStats:
     mount_point = config.mount_point
     destination_root = config.destination_root
@@ -27,27 +44,32 @@ def sync_media(config: Config, logger, device: CandidateDevice) -> SyncStats:
             f"{device.path} does not contain any of {config.required_dir_names}"
         )
 
-    excluded_dirs = {name.lower() for name in config.excluded_dir_names}
-    excluded_files = {name.lower() for name in config.excluded_file_names}
-    excluded_suffixes = {suffix.lower() for suffix in config.excluded_suffixes}
-    allowed_extensions = {suffix.lower() for suffix in config.allowed_extensions}
-
     filtered_out_count = 0
 
     def filter(path: Path) -> bool:
         if path.is_dir():
-            if path.name.lower() in excluded_dirs:
+            matched, excluded = _matches(path.name, config.excluded_patterns)
+            return not excluded
+
+        # Check if any parent directory is excluded
+        for parent in path.parents:
+            matched, excluded = _matches(parent.name, config.excluded_patterns)
+            if excluded:
                 return False
+
+        # Check if filename matches a pattern
+        matched, excluded = _matches(path.name, config.excluded_patterns)
+
+        if excluded:
+            return False
+
+        if matched:
             return True
-        if path.name.lower() in excluded_files:
-            return False
-        if path.suffix.lower() in excluded_suffixes:
-            return False
-        if path.suffix.lower() not in allowed_extensions:
-            nonlocal filtered_out_count
-            filtered_out_count += 1
-            return False
-        return True
+
+        # No match means filtered out
+        nonlocal filtered_out_count
+        filtered_out_count += 1
+        return False
 
     sync_stats = sync(
         source=mount_point,

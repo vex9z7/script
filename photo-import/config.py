@@ -11,37 +11,29 @@ dotenv.load_dotenv()
 _THIS_DIR = Path(__file__).parent
 
 
-def _load_ignore_list() -> tuple[frozenset[str], frozenset[str]]:
-    path = _THIS_DIR / ".photoignore"
-    dirs: set[str] = set()
-    suffixes: set[str] = set()
+def _load_patterns(path: Path) -> list[tuple[str, bool]]:
+    """Load fnmatch patterns from a file.
+
+    Returns list of (pattern, excluded) tuples.
+    - Lines starting with '!' are exclude patterns (excluded=True)
+    - Other lines are include patterns (excluded=False)
+    - Comments (#) are ignored
+    """
+    patterns: list[tuple[str, bool]] = []
     if path.exists():
         for line in path.read_text().splitlines():
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
-            if line.startswith("dir:"):
-                dirs.add(line[4:])
-            elif line.startswith("suffix:"):
-                suffixes.add(line[7:])
+            if line.startswith("!"):
+                patterns.append((line[1:], True))
             else:
-                dirs.add(line)
-    return frozenset(dirs), frozenset(suffixes)
+                patterns.append((line, False))
+    return patterns
 
 
-def _load_extensions() -> frozenset[str]:
-    path = _THIS_DIR / ".photoextensions"
-    if path.exists():
-        return frozenset(
-            line.strip()
-            for line in path.read_text().splitlines()
-            if line.strip() and not line.startswith("#")
-        )
-    return frozenset()
-
-
-_IGNORED_DIRS, _IGNORED_SUFFIXES = _load_ignore_list()
-_ALLOWED_EXTENSIONS = _load_extensions()
+_IGNORE_PATTERNS = _load_patterns(_THIS_DIR / ".photoignore")
+_DEVICE_PATTERNS = _load_patterns(_THIS_DIR / ".deviceignore")
 
 
 @dataclass(frozen=True)
@@ -59,13 +51,13 @@ class Config:
     read_only: bool = True
     supported_filesystems: tuple[str, ...] = ("exfat", "vfat", "fat32")
     required_dir_names: tuple[str, ...] = ("DCIM",)
-    allowed_extensions: frozenset[str] = field(
-        default_factory=lambda: _ALLOWED_EXTENSIONS
+    excluded_patterns: list[tuple[str, bool]] = field(
+        default_factory=lambda: _IGNORE_PATTERNS
     )
-    excluded_dir_names: frozenset[str] = field(default_factory=lambda: _IGNORED_DIRS)
-    excluded_file_names: frozenset[str] = field(default_factory=frozenset)
-    excluded_suffixes: frozenset[str] = field(default_factory=lambda: _IGNORED_SUFFIXES)
     overwrite_existing: bool = False
+    device_patterns: list[tuple[str, bool]] = field(
+        default_factory=lambda: _DEVICE_PATTERNS
+    )
 
 
 DEFAULT_CONFIG = Config()

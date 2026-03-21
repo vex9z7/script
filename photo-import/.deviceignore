@@ -1,0 +1,13 @@
+# Device patterns for photo-import
+# Similar to gitignore - last match wins
+# Pattern format: fnmatch-style glob
+# Prefix with ! to exclude
+
+# SD cards (via USB card reader)
+/dev/sd*
+
+# Internal SD card slot
+/dev/mmcblk*
+
+# Exclude NVMe devices (usually system drives)
+!/dev/nvme*
