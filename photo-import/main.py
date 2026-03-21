@@ -29,11 +29,8 @@ def main() -> int:
         return 1
 
     with FileLock(config.lock_file):
-        mount_point = Path(config.mount_point)
-        destination_root = Path(config.destination_root)
-
-        if is_mountpoint(mount_point):
-            logger.warning("mount point %s is already active", mount_point)
+        if is_mountpoint(config.mount_point):
+            logger.warning("mount point %s is already active", config.mount_point)
             return 1
 
         candidates = find_candidate_devices(config)
@@ -42,21 +39,20 @@ def main() -> int:
             return 0
 
         for device in candidates:
-            mounted = False
             try:
-                mount_device(device.path, mount_point, read_only=config.read_only)
-                mounted = True
+                mount_device(
+                    device.path, config.mount_point, read_only=config.read_only
+                )
                 stats = sync_media(config, logger, device)
                 logger.info(
                     "imported %s files from %s", stats.synced_files, device.label
                 )
             except Exception as exc:
                 logger.exception("device %s failed: %s", device.path, exc)
-                if mounted:
-                    safe_unmount(mount_point, logger)
+                safe_unmount(config.mount_point, logger)
                 continue
 
-            if mounted and not safe_unmount(mount_point, logger):
+            if not safe_unmount(config.mount_point, logger):
                 return 1
             return 0
 

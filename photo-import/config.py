@@ -39,8 +39,8 @@ _DEVICE_PATTERNS = _load_patterns(_THIS_DIR / ".deviceignore")
 @dataclass(frozen=True)
 class Config:
     log_file: Path | None = (
-        Path(os.environ.get("PHOTO_IMPORT_LOG_FILE", "/var/log/photo-import.log"))
-        if os.environ.get("PHOTO_IMPORT_LOG_FILE")
+        Path(os.environ["PHOTO_IMPORT_LOG_FILE"])
+        if "PHOTO_IMPORT_LOG_FILE" in os.environ
         else None
     )
     lock_file: Path = Path(

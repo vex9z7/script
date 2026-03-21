@@ -18,8 +18,7 @@ class SyncStats:
 
 
 def sync_media(config: Config, logger, device: CandidateDevice) -> SyncStats:
-    destination_root = config.destination_root
-    destination_root.mkdir(parents=True, exist_ok=True)
+    config.destination_root.mkdir(parents=True, exist_ok=True)
 
     if not _has_required_layout(config.mount_point, config):
         raise RuntimeError(
@@ -52,7 +51,7 @@ def sync_media(config: Config, logger, device: CandidateDevice) -> SyncStats:
 
     sync_stats = sync(
         source=config.mount_point,
-        destination=destination_root,
+        destination=config.destination_root,
         filter=filter,
     )
 

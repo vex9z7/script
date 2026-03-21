@@ -8,6 +8,17 @@ from config import Config
 from fnmatchplus import match_any
 
 
+_REMOVABLE_TRANSPORTS = {"usb", "mmc"}
+
+
+def _parse_rm(value: object) -> bool | None:
+    if value in (0, "0", False):
+        return False
+    if value in (1, "1", True):
+        return True
+    return None
+
+
 @dataclass(frozen=True)
 class CandidateDevice:
     path: str
@@ -72,21 +83,18 @@ def _is_candidate(device: dict, config: Config) -> bool:
     if not path or not match_any(path, config.device_patterns):
         return False
 
-    if device.get("rm") not in (1, "1", True):
+    if not _parse_rm(device.get("rm")):
         return False
 
     transport = (device.get("tran") or "").lower()
-    if transport not in {"usb", "mmc"}:
+    if transport not in _REMOVABLE_TRANSPORTS:
         return False
 
     return True
 
 
 def _to_candidate(device: dict) -> CandidateDevice:
-    rm = device.get("rm")
-    removable = (
-        False if rm in (0, "0", False) else (True if rm in (1, "1", True) else None)
-    )
+    removable = _parse_rm(device.get("rm"))
 
     return CandidateDevice(
         path=device["path"],
