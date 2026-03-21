@@ -19,6 +19,7 @@ def test_package_main_delegates_to_app_main(monkeypatch):
 
 def test_run_dispatches_registered_package(monkeypatch):
     run_module = importlib.import_module("run")
+    injected = []
 
     class FakeModule:
         @staticmethod
@@ -26,9 +27,22 @@ def test_run_dispatches_registered_package(monkeypatch):
             assert argv == ["--flag"]
             return 5
 
-    monkeypatch.setattr(run_module.importlib, "import_module", lambda _: FakeModule)
+    def fake_import_module(_name):
+        return FakeModule
+
+    def fake_inject_script_env(script):
+        injected.append(script)
+
+    monkeypatch.setitem(
+        run_module.SCRIPTS,
+        "photo_import",
+        {"module": "photo_import.__main__", "env_file": Path("/tmp/photo.env")},
+    )
+    monkeypatch.setattr(run_module, "_inject_script_env", fake_inject_script_env)
+    monkeypatch.setattr(run_module.importlib, "import_module", fake_import_module)
 
     assert run_module.main(["photo_import", "--flag"]) == 5
+    assert injected == [run_module.SCRIPTS["photo_import"]]
 
 
 def test_run_returns_error_for_unknown_script(capsys):
@@ -87,6 +101,35 @@ def test_importcheck_reports_failure(monkeypatch, capsys):
     captured = capsys.readouterr()
     assert "OK ok.module" in captured.out
     assert "FAIL broken.module: ModuleNotFoundError: missing dependency" in captured.err
+
+
+def test_importcheck_injects_env_for_script_modules(monkeypatch, tmp_path):
+    run_module = importlib.import_module("run")
+    env_file = tmp_path / ".env"
+    injected = []
+
+    def fake_read_dotenv(path):
+        return {"PHOTO_IMPORT_LOCK_FILE": "/tmp/lock", "_path": str(path)}
+
+    def fake_inject_env(values):
+        injected.append(values)
+
+    def fake_import(name):
+        return None
+
+    monkeypatch.setitem(
+        run_module.SCRIPTS,
+        "photo_import",
+        {"module": "photo_import.__main__", "env_file": env_file},
+    )
+
+    monkeypatch.setattr(run_module.dotenv, "read_dotenv", fake_read_dotenv)
+    monkeypatch.setattr(run_module.dotenv, "inject_env", fake_inject_env)
+    monkeypatch.setattr(run_module.importlib, "import_module", fake_import)
+
+    assert run_module.main(["importcheck", "photo_import.__main__"]) == 0
+
+    assert injected == [{"PHOTO_IMPORT_LOCK_FILE": "/tmp/lock", "_path": str(env_file)}]
 
 
 def test_run_py_is_portable_from_arbitrary_cwd(tmp_path):

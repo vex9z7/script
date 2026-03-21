@@ -5,6 +5,8 @@ import importlib
 import sys
 from pathlib import Path
 
+from scriptlib import dotenv
+
 
 REPO_ROOT = Path(__file__).resolve().parent
 IMPORTCHECK_MANIFEST = REPO_ROOT / "importcheck.txt"
@@ -14,7 +16,10 @@ if str(REPO_ROOT) not in sys.path:
 
 
 SCRIPTS = {
-    "photo_import": "photo_import.__main__",
+    "photo_import": {
+        "module": "photo_import.__main__",
+        "env_file": REPO_ROOT / "photo_import" / ".env",
+    },
 }
 
 
@@ -29,13 +34,15 @@ def main(argv: list[str] | None = None) -> int:
         return run_importcheck(args[1:])
 
     script_name = args[0]
-    module_name = SCRIPTS.get(script_name)
+    script = SCRIPTS.get(script_name)
 
-    if module_name is None:
+    if script is None:
         print(f"Unknown script: {script_name}", file=sys.stderr)
         print(_usage(), file=sys.stderr)
         return 2
 
+    _inject_script_env(script)
+    module_name = script["module"]
     module = importlib.import_module(module_name)
     return module.main(args[1:])
 
@@ -54,6 +61,7 @@ def run_importcheck(args: list[str]) -> int:
     failed = False
 
     for module_name in module_names:
+        _inject_env_for_module(module_name)
         try:
             importlib.import_module(module_name)
         except Exception as exc:  # pylint: disable=broad-exception-caught
@@ -76,6 +84,19 @@ def _load_importcheck_modules() -> list[str]:
         modules.append(item)
 
     return modules
+
+
+def _inject_env_for_module(module_name: str) -> None:
+    root_package = module_name.split(".", maxsplit=1)[0]
+    script = SCRIPTS.get(root_package)
+    if script is None:
+        return
+    _inject_script_env(script)
+
+
+def _inject_script_env(script: dict[str, str | Path]) -> None:
+    env_file = script["env_file"]
+    dotenv.inject_env(dotenv.read_dotenv(env_file))
 
 
 if __name__ == "__main__":
