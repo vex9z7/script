@@ -1,9 +1,7 @@
 # Import health manifest
 photo_import.__main__
 scriptlib.dotenv
-scriptlib.fingerprint
 scriptlib.flockplus
 scriptlib.fnmatchplus
 scriptlib.log
 scriptlib.pyrsync
-scriptlib.sync

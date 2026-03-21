@@ -21,12 +21,11 @@ Each script or shared utility must live in its own top-level directory. This is 
 ├── scriptlib/               # Shared utility namespace
 │   ├── __init__.py
 │   ├── dotenv/
-│   ├── fingerprint/
 │   ├── flockplus/
 │   ├── fnmatchplus/
 │   ├── log/
 │   ├── pyrsync/
-│   └── sync/
+│   └── ...
 └── <script_name>/
     ├── __init__.py
     ├── __main__.py
@@ -49,12 +48,10 @@ scriptlib/<utility-name>/
 ```
 
 Existing utilities:
-- `scriptlib.fingerprint`: File fingerprint comparison using file metadata and lazy content checks.
 - `scriptlib.flockplus`: Process lock for preventing concurrent script runs.
 - `scriptlib.dotenv`: Environment variable loader from `.env` files.
 - `scriptlib.log`: Configurable logger with file output support.
 - `scriptlib.pyrsync`: Thin wrapper around system `rsync` for convergent directory sync.
-- `scriptlib.sync`: File synchronization using fingerprint comparison.
 
 ## Script Conventions
 
@@ -74,7 +71,7 @@ Preferred Python module responsibilities:
 
 Shell scripts are acceptable when the task is truly simple, but Python is the default.
 
-**Do not duplicate shared utilities.** If a module with similar functionality exists (e.g., `sync`, `fingerprint`, `lock`, `dotenv`, `log`), use it instead of creating a new implementation. Duplication is not tolerated.
+**Do not duplicate shared utilities.** If a module with similar functionality exists (e.g., `pyrsync`, `lock`, `dotenv`, `log`), use it instead of creating a new implementation. Duplication is not tolerated.
 
 ## Scripts
 
