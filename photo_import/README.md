@@ -89,7 +89,7 @@ The following items are configurable in `config.py`:
 - `log_file`: Optional path to log file (default: stdout/stderr)
 - `log_level`: Logging threshold such as `INFO` or `DEBUG` (default: `INFO`)
 - `lock_file`: Path to lock file (default: `/tmp/photo-import.lock`)
-- `mount_root`: Root directory for derived per-device mount paths
+- `mount_root`: Root directory for derived per-device mount paths (recommended: `/tmp/photo-import/mnt`)
 - `import_root`: Root directory for derived per-device import paths
 - `read_only`: Mount read-only (default: `True`)
 - `allowed_extensions`: Supported file extensions (loaded from `.photoextensions`)
@@ -108,6 +108,8 @@ All paths can be configured via environment variables. See `.env.example`.
 - Set `PHOTO_IMPORT_LOG_LEVEL=DEBUG` to log why each block device is accepted or rejected during detection.
 - A process lock prevents concurrent runs when scheduled from cron.
 - `rsync` is required on the host system for media sync.
+- The recommended mount root is `/tmp/photo-import/mnt` so script-created mountpoints live on tmpfs instead of under `/mnt`.
+- Empty mount directories created under that root are intentionally left in place; the script does not perform explicit mount-path cleanup.
 
 ## Usage
 
