@@ -2,9 +2,10 @@ name: Python CI
 
 on:
   push:
-    branches: [main, master, dev]
+    branches: [master]
   pull_request:
-    branches: [main, master]
+    branches: [master]
+  workflow_dispatch:
 
 permissions:
   contents: read
