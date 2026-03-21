@@ -1,0 +1,36 @@
+[MASTER]
+ignore=tests/
+py-version=3.11
+
+[MESSAGES_CONTROL]
+disable=
+    C0114,  # missing-module-docstring
+    C0115,  # missing-class-docstring
+    C0116,  # missing-function-docstring
+    C0413,  # wrong-import-position
+    C0415,  # import-outside-toplevel
+    R0801,  # duplicate-code
+    R0902,  # too-many-instance-attributes
+    R0903,  # too-few-public-methods
+    R0914,  # too-many-locals
+    R1705,  # no-else-return
+    W0201,  # attribute-defined-outside-init
+    W0613,  # unused-argument
+    W0621,  # redefined-outer-name
+    W0622,  # redefined-builtin
+    W0718,  # broad-exception-caught
+    W0719,  # broad-exception-raised
+    W1514,  # unspecified-encoding
+    C1803,  # use-implicit-booleaness-not-comparison
+
+[FORMAT]
+max-line-length=100
+
+[DESIGN]
+max-args=8
+max-locals=15
+max-returns=8
+max-branches=15
+
+[REFACTORING]
+max-nested-blocks=5

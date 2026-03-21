@@ -1,6 +1,6 @@
 # TrueNAS Script Monorepo
 
-**Platform: Linux only**
+**Platform: TrueNAS Scale (based on Debian 12)**
 
 This repository is a monorepo for small operational scripts that run on a TrueNAS system.
 
@@ -109,19 +109,22 @@ Before adding behavior:
 
 ## Development Tooling
 
-The repo includes `ruff` configuration in [`pyproject.toml`](/home/dev/git/script/pyproject.toml) for both formatting and linting.
+The repo uses `pylint` for linting and `pytest` for testing.
 The repo is pinned to Python `3.11.9` via [.python-version](/home/dev/git/script/.python-version).
 
-Common commands:
-- `make fmt`
+Setup:
+```bash
+python3 -m venv .venv --upgrade
+.venv/bin/pip install -r requirements-dev.txt
+```
+
+Common commands (via Makefile):
 - `make lint`
-- `make check`
+- `make test`
 
-Recommended setup:
-- `python -m venv .venv`
-- `.venv/bin/pip install -r requirements-dev.txt`
-
-The `Makefile` uses `.venv/bin/python` and `.venv/bin/ruff` by default, so activation is optional.
+Or directly:
+- `pylint $(git ls-files '*.py')`
+- `pytest -q`
 
 ## Status
 

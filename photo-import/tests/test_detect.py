@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from unittest.mock import patch, MagicMock
 
-import pytest
-
 from config import Config
 from detect import find_candidate_devices, get_lsblk
 

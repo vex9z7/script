@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from fnmatchplus import match, match_any
 
 

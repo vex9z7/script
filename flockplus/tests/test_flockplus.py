@@ -19,7 +19,8 @@ class TestFlockPlus:
     def test_should_block_concurrent_access(self, lock_path):
         with FileLock(lock_path):
             with pytest.raises(OSError):
-                FileLock(lock_path).__enter__()
+                with FileLock(lock_path):
+                    pass
 
     def test_should_allow_reuse_after_release(self, lock_path):
         with FileLock(lock_path):
