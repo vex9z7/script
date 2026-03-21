@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from photo_import.config import Config
 from photo_import.detect import CandidateDevice
-from photo_import.photo_sync import sync_media
+from photo_import.photo_sync import _rsync_filters, sync_media
 
 
 @pytest.fixture
@@ -180,3 +180,26 @@ class TestSyncMedia:
         # Assert
         assert stats.synced_files == 0
         assert stats.skipped == 1
+
+
+class TestRsyncFilters:
+    def test_should_generate_rsync_rules_for_media_subset(self):
+        patterns = [
+            ("*.jpg", False),
+            ("*.JPG", False),
+            ("*.thm", True),
+            ("THUMBNAILS", True),
+        ]
+
+        rules = _rsync_filters(patterns)
+
+        assert rules == [
+            "- *.thm",
+            "- *.thm/***",
+            "- THUMBNAILS",
+            "- THUMBNAILS/***",
+            "+ */",
+            "+ *.jpg",
+            "+ *.JPG",
+            "- *",
+        ]

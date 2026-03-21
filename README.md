@@ -25,6 +25,7 @@ Each script or shared utility must live in its own top-level directory. This is 
 │   ├── flockplus/
 │   ├── fnmatchplus/
 │   ├── log/
+│   ├── pyrsync/
 │   └── sync/
 └── <script_name>/
     ├── __init__.py
@@ -52,6 +53,7 @@ Existing utilities:
 - `scriptlib.flockplus`: Process lock for preventing concurrent script runs.
 - `scriptlib.dotenv`: Environment variable loader from `.env` files.
 - `scriptlib.log`: Configurable logger with file output support.
+- `scriptlib.pyrsync`: Thin wrapper around system `rsync` for convergent directory sync.
 - `scriptlib.sync`: File synchronization using fingerprint comparison.
 
 ## Script Conventions
@@ -94,6 +96,7 @@ Each script must explicitly list its external system tool dependencies. These ar
 | `mount` | Mount storage devices | util-linux (core) |
 | `umount` | Unmount storage devices | util-linux (core) |
 | `mountpoint` | Check if path is mount point | util-linux (core) |
+| `rsync` | Convergent file synchronization | rsync |
 
 ## Development Approach
 

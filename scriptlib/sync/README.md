@@ -2,6 +2,8 @@
 
 File synchronization utility for making destination match source.
 
+Note: `photo_import` now prefers `scriptlib.pyrsync` for its primary sync engine. This module remains available for Python-native sync use.
+
 ## Purpose
 
 Synchronize files from source to destination directory. Decides what to copy, skip, or delete based on fingerprint comparison.
