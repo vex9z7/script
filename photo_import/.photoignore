@@ -6,26 +6,45 @@
 *.jpg
 *.JPG
 *.jpeg
+*.JPEG
 *.png
+*.PNG
 *.heic
+*.HEIC
 *.heif
+*.HEIF
 *.arw
+*.ARW
 *.cr2
+*.CR2
 *.cr3
+*.CR3
 *.nef
+*.NEF
 *.dng
+*.DNG
 *.raf
+*.RAF
 *.rw2
+*.RW2
 *.orf
+*.ORF
 *.srw
+*.SRW
 
 # Videos
 *.mp4
+*.MP4
 *.mov
+*.MOV
 *.mts
+*.MTS
 *.m2ts
+*.M2TS
 *.avi
+*.AVI
 *.mkv
+*.MKV
 
 # Thumbnails
 !*THUMBNAILS*

@@ -167,6 +167,52 @@ class TestSyncMedia:
         assert (destination_root / "DCIM" / "100MSDCF" / "DSC00982.JPG").exists()
         assert not (destination_root / "DCIM" / "100MSDCF" / "DSC00982.THM").exists()
 
+    def test_should_match_explicit_uppercase_video_patterns(
+        self, tmp_path, candidate_device, mock_logger
+    ):
+        mount_point = tmp_path / "mount"
+        destination_root = tmp_path / "dest"
+        dcim_dir = mount_point / "DCIM" / "100MSDCF"
+        dcim_dir.mkdir(parents=True)
+        (dcim_dir / "C0001.MOV").write_text("video")
+        (dcim_dir / "C0001.THM").write_text("thumb")
+
+        config = Config(
+            mount_root=tmp_path / "mount-root",
+            import_root=tmp_path / "import-root",
+        )
+
+        stats = sync_media(
+            config, mock_logger, candidate_device, mount_point, destination_root
+        )
+
+        assert stats.synced_files == 1
+        assert (destination_root / "DCIM" / "100MSDCF" / "C0001.MOV").exists()
+        assert not (destination_root / "DCIM" / "100MSDCF" / "C0001.THM").exists()
+
+    def test_should_match_explicit_uppercase_image_patterns(
+        self, tmp_path, candidate_device, mock_logger
+    ):
+        mount_point = tmp_path / "mount"
+        destination_root = tmp_path / "dest"
+        dcim_dir = mount_point / "DCIM" / "100MSDCF"
+        dcim_dir.mkdir(parents=True)
+        (dcim_dir / "DSC0001.PNG").write_text("image")
+        (dcim_dir / "DSC0001.THM").write_text("thumb")
+
+        config = Config(
+            mount_root=tmp_path / "mount-root",
+            import_root=tmp_path / "import-root",
+        )
+
+        stats = sync_media(
+            config, mock_logger, candidate_device, mount_point, destination_root
+        )
+
+        assert stats.synced_files == 1
+        assert (destination_root / "DCIM" / "100MSDCF" / "DSC0001.PNG").exists()
+        assert not (destination_root / "DCIM" / "100MSDCF" / "DSC0001.THM").exists()
+
     def test_should_report_skipped_when_sync_skips(
         self, tmp_path, candidate_device, mock_logger
     ):
