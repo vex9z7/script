@@ -36,7 +36,6 @@ photo_import/
 ├── photo_sync.py
 ├── cleanup.py
 ├── .photoignore
-├── .photoextensions
 ├── .env.example
 └── tests/
 ```
@@ -74,7 +73,7 @@ The unit tests for this script live under `photo_import/tests/`.
 
 `photo_sync.py`
 - Walk the mounted filesystem and derive `rsync` filters.
-- Select files by configured extension set.
+- Select files by configured include/exclude patterns.
 - Exclude thumbnails, caches, and preview files.
 - Sync the selected media subset to the destination folder using `rsync`.
 
@@ -92,12 +91,40 @@ The following items are configurable in `config.py`:
 - `mount_root`: Root directory for derived per-device mount paths (recommended: `/tmp/photo-import/mnt`)
 - `import_root`: Root directory for derived per-device import paths
 - `read_only`: Mount read-only (default: `True`)
-- `allowed_extensions`: Supported file extensions (loaded from `.photoextensions`)
-- `excluded_dir_names`: Directories to skip (loaded from `.photoignore`)
-- `excluded_file_names`: Files to skip
-- `excluded_suffixes`: File suffixes to skip (loaded from `.photoignore`)
+- `excluded_patterns`: Include/exclude media patterns (loaded from `.photoignore`)
 
 All paths can be configured via environment variables. See `.env.example`.
+
+## Supported Media Patterns
+
+The default media patterns are defined in `photo_import/.photoignore`.
+
+Included image suffixes:
+- `.jpg`, `.JPG`, `.jpeg`, `.JPEG`
+- `.png`, `.PNG`
+- `.heic`, `.HEIC`
+- `.heif`, `.HEIF`
+- `.arw`, `.ARW`
+- `.cr2`, `.CR2`
+- `.cr3`, `.CR3`
+- `.nef`, `.NEF`
+- `.dng`, `.DNG`
+- `.raf`, `.RAF`
+- `.rw2`, `.RW2`
+- `.orf`, `.ORF`
+- `.srw`, `.SRW`
+
+Included video suffixes:
+- `.mp4`, `.MP4`
+- `.mov`, `.MOV`
+- `.mts`, `.MTS`
+- `.m2ts`, `.M2TS`
+- `.avi`, `.AVI`
+- `.mkv`, `.MKV`
+
+Excluded by default:
+- Thumbnail and preview artifacts such as `.thm`, `.THM`, `.thumb`
+- Thumbnail/system directories matching patterns like `*THUMBNAILS*`, `*thumb*`, `*Spotlight*`, and `*@eaDir*`
 
 ## Operational Notes
 
